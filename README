@@ -1,0 +1,20 @@
+This a lightweight form generation module, which can be used with either
+CGI.pm (version 2 or 3), or (inside mod_perl) Apache::Request.
+The module provides similar facilities to CGI.pm's HTML tag generation
+routines, but is restricted to form field generation tags, with sticky values.
+Also, the interface is not so flexible as CGI.pm's, in order to keep the code
+size down.
+
+Changes since version 0.05:
+  Add well_formed() method to control trailing slash in elements
+	(unfortunately defaults to false - thanks, Netscape)
+  Make sure everything is otherwise XHTML compliant
+  Fix text() and textarea() examples
+
+
+
+This module is copyright 2001 Peter Haworth. You may use and distribute this
+module according to the same terms as Perl is distributed under.
+
+
+# SCCS version: 1.7	last updated 04/09/02

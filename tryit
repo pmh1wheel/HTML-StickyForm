@@ -1,0 +1,86 @@
+#!/opt/bin/perl
+
+use blib;
+use CGI;
+use HTML::StickyForms;
+use strict;
+print "$INC{'HTML/StickyForms.pm'}\n";
+
+my $emptyq=CGI->new('');
+my $fullq=$ENV{GATEWAY_INTERFACE} ? CGI->new : CGI->new(*DATA);
+
+my $emptyf=HTML::StickyForms->new($emptyq);
+my $fullf=HTML::StickyForms->new($fullq);
+my $blankf=HTML::StickyForms->new;
+
+print "Content-type: text/html\n\n";
+foreach(
+  [Empty => $emptyf],
+  [Full => $fullf],
+  [Blank => $blankf],
+){
+  my($name,$f)=@$_;
+
+  $f->values_as_labels(0);
+  print
+    qq(
+      <FORM>$name:
+    ),
+    $f->text(name => 'dinosaur', default => '',size => 40),
+    "\n",
+    $f->password(name => 'song', default => 'God Save the Queen'),
+    "\n",
+    $f->text(name => 'friends', default => '',size => 60),
+    "\n",
+    $f->textarea(name => 'text', default => '',rows => 5, cols => 60, wrap => 'virtual'),
+    "\n",
+    $f->checkbox(name => 'check1',value=>1,checked => 1),
+    "\n",
+    $f->checkbox(name => 'check2',value=>1,checked => 1),
+    "\n",
+    $f->checkbox_group(
+      name => 'check3',
+      values => [1,2,3,4],
+      defaults => [4],
+      labels => {1 => ' #1',3 => ' #3'},
+      values_as_labels => 1,
+    ),
+    "\n",
+    $f->radio_group(
+      name => 'dinosaur',
+      labels => {'"' => 'quote',a => 'blob',barney => '<wibble>'},
+      default => 'a',
+      escape => $name eq 'Blank',
+    ),
+    "\n",
+    $f->select(name => 'select_me',labels => {'"' => 'quote',a => 'blob',barney => '<wibble>'},default => 'a'),
+    $f->select(name => 'friends',labels => {map { $_ => $_ } qw(Frank Jessica George Nancy Oink)}, default => ['Frank','Nancy'],size => 3, multiple => 1),
+    "\n",
+    $f->select(name => 'no_user',labels => {1 => 'a', 2 => 'b'}, default => [1],size => 3, multiple => 1),
+    $f->radio_group(name => 'number',labels => {0,'zero',1,'one'},default => 0),
+
+    $f->text(type => 'hidden',name => 'hide'),
+    qq(
+      <INPUT type="hidden" name="submit" value=1>
+      <INPUT type="submit" value=" submit ">
+      </FORM>
+    ),
+  ;
+}
+
+
+
+__DATA__
+dinosaur=barney
+song=I+love+you
+friends=Jessica
+friends=George
+friends=Nancy
+text=wibble%0As"<>pon%0AGulag
+check1=1
+check2=2
+check3=3
+check3=4
+select_me=barney
+hide=1
+number=1
