@@ -1,8 +1,4 @@
-# $Id: Todo,v 1.2 2005/10/19 12:06:04 pmh Exp $
-
-popup_menu() seems to be using the default if the user cleared it
-
-Tests
+# $Id: Todo,v 1.3 2005/10/19 14:33:18 pmh Exp $
 
 Check code coverage of tests
 
