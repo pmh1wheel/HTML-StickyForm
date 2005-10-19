@@ -6,7 +6,7 @@
 #   Author: Peter Haworth
 #   Date created: 06/06/2000
 #
-#   $Id: StickyForms.pm,v 1.2 2005/10/19 12:08:12 pmh Exp $
+#   $Id: StickyForms.pm,v 1.3 2005/10/19 16:24:20 pmh Exp $
 #
 #   Copyright Peter Haworth 2001
 #   You may use and distribute this module according to the same terms
@@ -394,9 +394,7 @@ This version has exactly the same functionality as version 0.06, and
 exists only to provide more visibility to its successor, L<HTML::StickyForm>.
 The new module tidies up a few interface inconsistencies which couldn't be
 done without breaking backwards compatibility with the existing module, hence
-the name change. Future updates to L<HTML::StickyForm> will continue to be
-released in the HTML-StickyForms distribution, to encourage existing users to
-migrate.
+the name change.
 
 The new module provides a more consistent API, which allows stickiness to be
 varied on a per-method basis in an obvious manner. It also diverges slightly
