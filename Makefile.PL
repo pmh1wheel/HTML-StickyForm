@@ -6,9 +6,9 @@
 #   Author: Peter Haworth
 #   Date created: 06/06/2000
 #
-#   sccs version: 1.2    last changed: 06/15/01
+#   $Id: Makefile.PL,v 1.2 2005/10/19 12:05:10 pmh Exp $
 #
-#   Copyright Peter Haworth 2001
+#   Copyright Institute of Physics Publishing 2001-2005
 #
 ################################################################################
 
@@ -16,7 +16,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
   NAME => 'HTML::StickyForms',
-  VERSION_FROM => 'StickyForms.pm',
+  VERSION_FROM => 'lib/HTML/StickyForm.pm',
   dist => {
     COMPRESS => 'gzip -9f',
     SUFFIX => 'gz',
