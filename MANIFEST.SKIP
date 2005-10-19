@@ -1,0 +1,14 @@
+# $Id: MANIFEST.SKIP,v 1.1 2005/10/19 12:03:07 pmh Exp $
+
+# Version control
+^\.cvsignore$
+\bCVS\b
+
+# MakeMaker generated files
+^Makefile$
+^blib/
+^pm_to_blib$
+
+# Vim swap files
+\.swp$
+
