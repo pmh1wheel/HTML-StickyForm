@@ -1,4 +1,4 @@
-# $Id: 20radio_group.t,v 1.1 2005/10/19 14:02:43 pmh Exp $
+# $Id: 20radio_group.t,v 1.2 2005/10/19 15:44:51 pmh Exp $
 
 use Test::More no_plan;
 use Test::XML;
@@ -29,11 +29,11 @@ for(
     '<f><input type="radio" name="abc" value="0" /></f>',
     '<f><input type="radio" name="abc" value="0" /></f>',
   ],
-  [{name => 'abc',value => [0]},'abc/0',
+  [{name => 'abc',values => [0]},'abc/0',
     '<f><input type="radio" name="abc" value="0" /></f>',
     '<f><input type="radio" name="abc" value="0" /></f>',
   ],
-  [{name => 'abc',values => [0], value => [456]},'abc/0',
+  [{name => 'abc',values => [0], default => [456]},'abc/0',
     '<f><input type="radio" name="abc" value="0" /></f>',
     '<f><input type="radio" name="abc" value="0" /></f>',
   ],

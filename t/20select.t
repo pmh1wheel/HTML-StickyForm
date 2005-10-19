@@ -1,4 +1,4 @@
-# $Id: 20select.t,v 1.1 2005/10/19 14:02:43 pmh Exp $
+# $Id: 20select.t,v 1.2 2005/10/19 15:44:51 pmh Exp $
 
 use Test::More no_plan;
 use Test::XML;
@@ -34,23 +34,11 @@ for(
     '<select name="abc"><option value="0" /></select>',
     '<select name="abc"><option value="0" /></select>',
   ],
-  [{name => 'abc',value => [0]},'abc/0(no s)',
-    '<select name="abc"><option value="0" /></select>',
-    '<select name="abc"><option value="0" /></select>',
-  ],
   [{name => 'abc',values => [0], selected => [0]},'abc/0/sel=0',
     '<select name="abc"><option value="0" selected="selected"/></select>',
     '<select name="abc"><option value="0" selected="selected"/></select>',
   ],
   [{name => 'abc',values => [0], selected => [456]},'abc/0/sel=456',
-    '<select name="abc"><option value="0" /></select>',
-    '<select name="abc"><option value="0" /></select>',
-  ],
-  [{name => 'abc',values => [0], defaults => [0]},'abc/0/defs=0',
-    '<select name="abc"><option value="0" selected="selected" /></select>',
-    '<select name="abc"><option value="0" /></select>',
-  ],
-  [{name => 'abc',values => [0], defaults => [456]},'abc/0/defs=456',
     '<select name="abc"><option value="0" /></select>',
     '<select name="abc"><option value="0" /></select>',
   ],
