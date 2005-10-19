@@ -6,7 +6,7 @@
 #   Author: Peter Haworth
 #   Date created: 06/06/2000
 #
-#   $Id: Makefile.PL,v 1.2 2005/10/19 12:05:10 pmh Exp $
+#   $Id: Makefile.PL,v 1.3 2005/10/19 14:31:36 pmh Exp $
 #
 #   Copyright Institute of Physics Publishing 2001-2005
 #
@@ -21,6 +21,10 @@ WriteMakefile(
     COMPRESS => 'gzip -9f',
     SUFFIX => 'gz',
     DIST_DEFAULT => 'all tardist',
+  },
+  PREREQ_PM => {
+    'Test::More' => 0,
+    'Test::XML' => 0,
   },
   $ExtUtils::MakeMaker::VERSION >= 5.4301 ? (
     ABSTRACT => 'Generic mod_perl/CGI HTML form generation',
