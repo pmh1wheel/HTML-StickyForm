@@ -1,21 +1,10 @@
-################################################################################
-#
-#   File name: Makefile.PL
-#   Project: HTML::StickyForms
-#
-#   Author: Peter Haworth
-#   Date created: 06/06/2000
-#
-#   $Id: Makefile.PL,v 1.3 2005/10/19 14:31:36 pmh Exp $
-#
-#   Copyright Institute of Physics Publishing 2001-2005
-#
-################################################################################
+# $Id: Makefile.PL,v 1.4 2005/10/19 15:56:04 pmh Exp $
+# Copyright (C) Institute of Physics Publishing 2001-2005
 
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-  NAME => 'HTML::StickyForms',
+  NAME => 'HTML::StickyForm',
   VERSION_FROM => 'lib/HTML/StickyForm.pm',
   dist => {
     COMPRESS => 'gzip -9f',
