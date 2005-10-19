@@ -1,8 +1,9 @@
-# $Id: StickyForm.pm,v 1.2 2005/10/19 13:52:36 pmh Exp $
+# $Id: StickyForm.pm,v 1.3 2005/10/19 15:44:21 pmh Exp $
 
 =head1 NAME
 
-HTML::StickyForm - HTML form generation for CGI or mod_perl
+HTML::StickyForm - Lightweight general-purpose HTML form generation,
+with sticky values
 
 =head1 SYNOPSIS
 
@@ -18,44 +19,52 @@ HTML::StickyForm - HTML form generation for CGI or mod_perl
 
    $r->send_http_header;
    print
-     "<html><body><form>",
+     '<html><body>',
+     $form->form_start,
+
      "Text field:",
      $f->text(name => 'field1', size => 40, default => 'default value'),
+
      "<br />Text area:",
      $f->textarea(name => 'field2', cols => 60, rows => 5, default => 'stuff'),
+
      "<br />Radio buttons:",
      $f->radio_group(name => 'field3', values => [1,2,3],
        labels => { 1=>'one', 2=>'two', 3=>'three' }, default => 2),
+
      "<br />Single checkbox:",
      $f->checkbox(name => 'field4', value => 'xyz', checked => 1),
+
      "<br />Checkbox group:",
      $f->checkbox_group(name => 'field5', values => [4,5,6],
-       labels => { 4=>'four', 5=>'five', 6=>'six' }, defaults => [5,6]),
+       labels => { 4=>'four', 5=>'five', 6=>'six' }, default => [5,6]),
+
      "<br />Password field:",
      $f->password(name => 'field6', size => 20),
+
      '<br />",
      $f->submit(value => ' Hit me! '),
-     '</form></body></html>',
+
+     $f->form_end,
+     '</body></html>',
     ;
     return OK;
   }
 
 =head1 DESCRIPTION
 
-This module provides a simple interface for generating HTML C<E<lt>formE<gt>>
+This module provides a simple interface for generating HTML form
 elements, with default values chosen from the previous form submission. This
-module was written with mod_perl in mind, but works equally well with CGI.pm,
-including the new 3.x version.
+module was written with mod_perl (L<Apache::Request>) in mind, but works
+equally well with CGI.pm, including the new 3.x version, or any other module
+which implements a param() method, or even completely standalone.
 
 The module does not provide methods for generating all possible HTML elements,
-only those which are used in form construction. Even then, the focus is on
-those elements which benefit from having default values overridden by the
-previous form submission.
-
+only those which are used in form construction.
 In addition, this module's interface is much less flexible than CGI.pm's; all
 routines work only as methods, and there is only one way of passing parameters
-to each method (though one or two parameters have multiple names).
-This was done mainly to keep the size and complexity down.
+to each method.  This was done for two reasons: to keep the API simple and
+consistent, and to keep the code size down to a minimum.
 
 =cut
 
@@ -257,11 +266,10 @@ with a value of "bloggs".
 
 In cases where sticky values are useful, there are two ways of specifying the
 values, depending on whether stickiness is required for the element being
-generated. To set sticky value defaults, use the C<default> argument
-(or C<defaults> where multiple elements are being generated). Alternatively,
-to set values which are not affected by previous values entered by the user,
-use the C<value> argument (or C<selected> or C<checked>, depending on the
-type of element being generated).
+generated. To set sticky value defaults, use the C<default> argument.
+Alternatively, to set values which are not affected by previous values entered
+by the user, use the C<value> argument (or C<selected> or C<checked>, depending
+on the type of element being generated).
 
 =over
 
@@ -477,11 +485,11 @@ all tags. All arguments are used directly to generate attributes in each tag,
 except for those listed below. Unless otherwise stated, all names and values
 are HTML-escaped.
 
-C<values> or C<value>: An arrayref of values.
+C<values>: An arrayref of values.
 One element will be generated for each element, in the order supplied.
 If not supplied, the label keys will be used instead.
 
-C<labels> or C<label>: A hashref of labels.
+C<labels>: A hashref of labels.
 Each element generated will be followed by the label keyed
 by the value. Values will be HTML-escaped unless a false C<escape> argument
 is supplied.  If no label is present for a given value and C<values_as_labels>
@@ -493,10 +501,10 @@ C<checked>: Unconditional status. If present, used to decide whether each
 checkbox is marked as checked, and causes C<default>, C<defaults> and any
 sticky values to be ignored. May be a single value or arrayref of values.
 
-C<defaults> or C<default>: Conditional status, ignored if C<checked> is present.
+C<default>: Conditional status, ignored if C<checked> is present.
 If the form is sticky, individual checkboxes are marked as checked if the
 sticky parameter includes at least one value which is the same as the individual
-checkbox's value. Otherwise, the supplied C<defaults> or C<default> values are
+checkbox's value. Otherwise, the supplied C<default> values are
 used in the same way. May be a single value or arrayref of values.
 
 C<linebreak>: If true, each element/label will be followed by a C<E<lt>brE<gt>>
@@ -511,23 +519,19 @@ sub checkbox_group{
   my($self,%args)=@_;
   my $type=delete $args{type} || 'checkbox';
   my $name=delete $args{name};
-  my $labels=delete $args{label} || {};
-  $labels=delete $args{labels} if exists $args{labels};
+  my $labels=delete $args{labels} || {};
   my $escape_labels=1;
   $escape_labels=delete $args{escape_labels} if exists $args{escape_labels};
-  my $values=delete $args{value};
-  $values=delete $args{values} if exists $args{values};
+  my $values=delete $args{values};
   $values||=[keys %$labels];
   my $checked=[];
   if(exists $args{checked}){
     $checked=delete $args{checked};
     $checked=[$checked] if ref($checked) ne 'ARRAY';
     delete $args{default};
-    delete $args{defaults};
   }else{
-    if(exists $args{default} || $args{defaults}){
+    if(exists $args{default}){
       $checked=delete $args{default};
-      $checked=delete $args{defaults} if exists $args{defaults};
       $checked=[$checked] if ref($checked) ne 'ARRAY';
     }
     $checked=[$self->{req}->param($name)] if $self->{params};
@@ -588,20 +592,20 @@ sub radio_group{
 Generates a C<E<lt>selectE<gt>> element. All arguments are used directly to
 generate attributes in the C<E<lt>selectE<gt>> element, except for those listed below. Unless otherwise stated, all names and values are HTML-escaped.
 
-C<values> or C<value>: An arrayref of values.
+C<values>: An arrayref of values.
 One C<E<lt>optionE<gt>> element will be created inside the C<E<lt>selectE<gt>>
 element for each entry, in the supplied order.  Defaults to label keys.
 
-C<labels> or C<label>: A hashref of labels.
+C<labels>: A hashref of labels.
 Each C<E<lt>optionE<gt>> tag generated will contain the
 label keyed by its value. If no label is present for a given value, no label
 will be generated. Defaults to an empty hashref.
 
 C<selected>: Unconditional status. If present, the supplied values will be
-used to decide which options to mark as selected, and C<defaults>, C<default>
-and any sticky values will be ignored. May be a single value or arrayref.
+used to decide which options to mark as selected, and C<default> and any
+sticky values will be ignored. May be a single value or arrayref.
 
-C<defaults> or C<default>: Consitional status, ignored if C<selected> is
+C<default>: Consitional status, ignored if C<selected> is
 supplied. If the form is sticky, the sticky values will be used to decide which
 options are selected. Otherwise, the supplied values will be used.
 May be a single value or arrayref.
@@ -617,19 +621,14 @@ sub select{
   my($self,%args)=@_;
   my $name=delete $args{name};
   my $multiple=delete $args{multiple};
-  my $labels=delete $args{label} || {};
-  $labels=delete $args{labels} if exists $args{labels};
-  my $values=delete $args{values};
-  $values=delete $args{value} if exists $args{value};
-  $values||=[keys %$labels];
+  my $labels=delete $args{labels} || {};
+  my $values=delete $args{values} || [keys %$labels];
   my $selected;
   if(exists $args{selected}){
     $selected=delete $args{selected};
-    delete $args{defaults};
     delete $args{default};
   }else{
     $selected=delete $args{default};
-    $selected=delete $args{defaults} if exists $args{defaults};
     $selected=[$self->{req}->param($name)] if $self->{params};
   }
   if(!defined $selected){ $selected=[]; }
