@@ -1,5 +1,9 @@
-Generate lowercase element/attribute names
+# $Id: Todo,v 1.2 2005/10/19 12:06:04 pmh Exp $
 
 popup_menu() seems to be using the default if the user cleared it
 
 Tests
+
+Check code coverage of tests
+
+per-element attributes for *_group(), select()
