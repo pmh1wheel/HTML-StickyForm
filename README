@@ -1,20 +1,31 @@
-This a lightweight form generation module, which can be used with either
-CGI.pm (version 2 or 3), or (inside mod_perl) Apache::Request.
-The module provides similar facilities to CGI.pm's HTML tag generation
-routines, but is restricted to form field generation tags, with sticky values.
-Also, the interface is not so flexible as CGI.pm's, in order to keep the code
-size down.
+$Id: README,v 1.2 2005/10/19 15:54:40 pmh Exp $
 
-Changes since version 0.05:
-  Add well_formed() method to control trailing slash in elements
-	(unfortunately defaults to false - thanks, Netscape)
-  Make sure everything is otherwise XHTML compliant
-  Fix text() and textarea() examples
+HTML::StickyForm is a lightweight general-purpose HTML form generation module,
+compatible with CGI.pm (versions 2 and 3), mod_perl's Apache::Request, though
+neither is required. The module provides similar facilities to CGI.pm's HTML
+tag generation routines, including optionally sticky values. However, to keep
+the code size down, rather than CGI.pm's excessive flexibility, the API is
+simple and consistent.
+
+Changes since version 0.06:
+  HTML::StickyForms is deprecated in favour of HTML::StickyForm,
+    which allows stickiness to be easily switched on or off on a per-method
+    basis, while retaining a simple and consistent interface.
+  No changes were made to HTML::StickyForms, and never will be. The changes
+    below describe differences between the old HTML::StickyForms and the new
+    HTML::StickyForm.
+  well_formed() now defaults to true
+  hidden(), password() and submit() added,
+    to allow more input types to be easily generated
+  form_start(), form_start_multiple() and form_end() added,
+    to allow the whole form to be generated with the same API
+  Argument aliases removed, making argument behaviour completely consistent
+    in all cases where special behaviour is invoked
+  Improved documentation
+  Tests
 
 
+This module is copyright (C) 2001-2005 Institute of Physics Publishing.
+You may use and distribute this module according to the same terms
+that Perl is distributed under.
 
-This module is copyright 2001 Peter Haworth. You may use and distribute this
-module according to the same terms as Perl is distributed under.
-
-
-# SCCS version: 1.7	last updated 04/09/02
