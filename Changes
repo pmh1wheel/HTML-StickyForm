@@ -1,3 +1,18 @@
+$Id: Changes,v 1.2 2005/10/19 15:53:47 pmh Exp $
+
+2005-10-19 0.07 First release of the new API
+  The focus has shifted towards a slightly more general form generation class,
+    which includes methods for all input types, as well as the form element
+    itself. This requires a slight, but backwards-incompatible API change,
+    so HTML::StickyForms is now deprecated in favour of the new HTML::StickyForm
+  Sticky parameters can now be retrieved from any object supporting a compatible
+    param() method, or even unblessed arrayrefs or hashrefs
+  Stickiness can be easily overridden on a per-method basis
+  Removed argument aliases, which means that any given argument name only
+    triggers one type of special behaviour, no matter which method it's sent to
+  Improved documentation (I hope)
+  Actual tests!
+
 2002-04-09 0.06 Sixth release
   Add well_formed() method to control trailing slash in elements
 	(unfortunately defaults to false - thanks, Netscape)
