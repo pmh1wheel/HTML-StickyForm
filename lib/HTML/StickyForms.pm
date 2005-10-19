@@ -6,7 +6,7 @@
 #   Author: Peter Haworth
 #   Date created: 06/06/2000
 #
-#   sccs version: 1.10    last changed: 04/09/02
+#   $Id: StickyForms.pm,v 1.2 2005/10/19 12:08:12 pmh Exp $
 #
 #   Copyright Peter Haworth 2001
 #   You may use and distribute this module according to the same terms
@@ -20,7 +20,8 @@ use vars qw(
   $VERSION
 );
 
-$VERSION=0.06;
+# Use the same version as HTML::StickyForm
+$VERSION=0.07;
 
 
 ################################################################################
@@ -370,22 +371,44 @@ HTML::StickyForms - HTML form generation for CGI or mod_perl
      "Text field:",
      $f->text(name => 'field1', size => 40, default => 'default value'),
      "<BR>Text area:",
-     $r->textarea(name => 'field2', cols => 60, rows => 5, default => 'stuff'),
+     $f->textarea(name => 'field2', cols => 60, rows => 5, default => 'stuff'),
      "<BR>Radio buttons:",
-     $r->radio_group(name => 'field3', values => [1,2,3],
+     $f->radio_group(name => 'field3', values => [1,2,3],
        labels => { 1=>'one', 2=>'two', 3=>'three' }, default => 2),
      "<BR>Single checkbox:",
-     $r->checkbox(name => 'field4', value => 'xyz', checked => 1),
+     $f->checkbox(name => 'field4', value => 'xyz', checked => 1),
      "<BR>Checkbox group:",
-     $r->checkbox_group(name => 'field5', values => [4,5,6],
+     $f->checkbox_group(name => 'field5', values => [4,5,6],
        labels => { 4=>'four', 5=>'five', 6=>'six' }, defaults => [5,6]),
      "<BR>Password field:",
-     $r->password(name => 'field6', size => 20),
+     $f->password(name => 'field6', size => 20),
      '<BR><INPUT type="submit" value=" Hit me! ">',
      '</FORM></BODY></HTML>',
     ;
     return OK;
   }
+
+=head1 THIS MODULE IS DEPRECATED
+
+This version has exactly the same functionality as version 0.06, and
+exists only to provide more visibility to its successor, L<HTML::StickyForm>.
+The new module tidies up a few interface inconsistencies which couldn't be
+done without breaking backwards compatibility with the existing module, hence
+the name change. Future updates to L<HTML::StickyForm> will continue to be
+released in the HTML-StickyForms distribution, to encourage existing users to
+migrate.
+
+The new module provides a more consistent API, which allows stickiness to be
+varied on a per-method basis in an obvious manner. It also diverges slightly
+from the previous dogma of only supplying methods which strictly benefit from
+stickiness, as it now provides convenience methods for generating password,
+hidden and submit elements, as well as the form element itself. This allows
+cleaner code to be written, since the whole form can now be generated using
+a single API. Objects created by the new module have the C<well_formed>
+attribute enabled by default, since most widely-used browsers can handle this
+now. Finally, the trim_params() method has been removed from the new module,
+since this would be better located in a module geared towards parameter
+validation.
 
 =head1 DESCRIPTION
 
@@ -405,7 +428,7 @@ to keep the size and complexity down.
 
 =over 4
 
-=item HTML::StickyForms->new($req)
+=item HTML::StickyForms-E<gt>new($req)
 
 Creates a new form generation object. The single argument can be an
 Apache::Request object, a CGI object (v2.x), a CGI::State object (v3.x),
@@ -413,7 +436,7 @@ or an object of a subclass of any of the above. As a special case, if the
 argument is C<undef> or C<''>, the object created will behave as if a request
 object with no submitted fields was given.
 
-=item $f->set_sticky([BOOL])
+=item $f-E<gt>set_sticky([BOOL])
 
 If a true argument is passed, the form object will be sticky, using the request
 object's parameters to fill the form. If a false argument is passed, the form
@@ -427,11 +450,11 @@ is not usually necessary to call it explicitly. However, it may be necessary to
 call this method if parameters are set with the C<param()> method after the
 form object is created.
 
-=item $f->trim_params()
+=item $f-E<gt>trim_params()
 
 Removes leading and trailing whitespace from all submitted values.
 
-=item $f->values_as_labels([BOOL])
+=item $f-E<gt>values_as_labels([BOOL])
 
 With no arguments, this method returns the C<values_as_labels> attribute. This
 attribute determines what to do when a value has no label in the
@@ -442,7 +465,7 @@ by the user.
 
 If an argument is passed, it is used to set the C<values_as_labels> attribute.
 
-=item $f->well_formed([BOOL])
+=item $f-E<gt>well_formed([BOOL])
 
 With no arguments, this method return the C<well_formed> attribute. This
 attribute determines whether to generate well-formed XML, by including the
@@ -453,7 +476,7 @@ be well-formed.
 
 If an argument is passed, it is used to set the C<well_formed> attribute.
 
-=item $f->text(%args)
+=item $f-E<gt>text(%args)
 
 Generates an E<lt>INPUTE<gt> tag, with a type of C<"text">. All arguments
 are used directly to generate attributes for the tag, with the following
@@ -461,15 +484,15 @@ exceptions:
 
 =over 8
 
-=item type
+=item type,
 
 Defaults to C<"text">
 
-=item name
+=item name,
 
 The value passed will have all HTML-special characters escaped.
 
-=item default
+=item default,
 
 Specifies the default value of the field if no fields were submitted in the
 request object passed to C<new()>. The value used will have all HTML-special
@@ -477,29 +500,29 @@ characters escaped.
 
 =back
 
-=item $f->password(%args)
+=item $f-E<gt>password(%args)
 
 As C<text()>, but generates a C<"password"> type field.
 
-=item $f->textarea(%args)
+=item $f-E<gt>textarea(%args)
 
 Generates a E<lt>TEXTAREAE<gt> container. All arguments are used directly
 to generate attributes for the start tag, except for:
 
 =over 8
 
-=item name
+=item name.
 
 This value will be HTML-escaped.
 
-=item default
+=item default.
 
 Specifies the default contents of the container if no fields were submitted.
 The value used will be HTML-escaped.
 
 =back
 
-=item $f->checkbox(%args)
+=item $f-E<gt>checkbox(%args)
 
 Generates a single C<"checkbox"> type E<lt>INPUTE<gt> tag. All arguments are
 used directly to generate attributes for the tag, except for:
@@ -516,7 +539,7 @@ Specifies the default state of the field if no fields were submitted.
 
 =back
 
-=item $f->checkbox_group(%args)
+=item $f-E<gt>checkbox_group(%args)
 
 Generates a group of C<"checkbox"> type E<lt>INPUTE<gt> tags. If called in
 list context, returns a list of tags, otherwise a single string containing
@@ -533,12 +556,12 @@ Defaults to C<"checkbox">.
 
 This value will be HTML-escaped.
 
-=item values or value
+=item values, or value
 
 An arrayref of values. One tag will be generated for each element. The values
 will be HTML-escaped. Defaults to label keys.
 
-=item labels or label
+=item labels, or label
 
 A hashref of labels. Each tag generated will be followed by the label keyed
 by the value. If no label is present for a given value, no label will be
@@ -548,7 +571,7 @@ generated. Defaults to an empty hashref.
 
 If this value is true, the labels will be HTML-escaped.
 
-=item defaults or default
+=item defaults, or default
 
 A single value or arrayref of values to be checked if no fields were submitted.
 Defaults to an empty arrayref.
@@ -563,18 +586,18 @@ Overrides the form object's C<values_as_labels> attribute.
 
 =back
 
-=item $f->radio_group(%args)
+=item $f-E<gt>radio_group(%args)
 
 As C<checkbox_group()>, but generates C<"radio"> type tags.
 
-=item $f->select(%args)
+=item $f-E<gt>select(%args)
 
 Generates a E<lt>SELECTE<gt> tags. All arguments are used directly to generate
 attributes in the E<lt>SELECTE<gt> tag, except for the following:
 
 =over 8
 
-=item name
+=item name:
 
 This value will be HTML-escaped.
 
@@ -599,7 +622,7 @@ submitted. Defaults to an empty arrayref.
 
 If a true value is passed, the C<MULTIPLE> attribute is set.
 
-=item values_as_labels
+=item values_as_labels,
 
 Overrides the form object's C<values_as_labels> attribute.
 
@@ -609,5 +632,10 @@ Overrides the form object's C<values_as_labels> attribute.
 
 =head1 AUTHOR
 
-Peter Haworth E<lt>pmh@edison.ioppublishing.comE<gt>
+Copyright (C) Institute of Physics Publishing 2000-2005
+
+	Peter Haworth <pmh@edison.ioppublishing.com>
+
+You may use and distribute this module according to the same terms
+that Perl is distributed under.
 
