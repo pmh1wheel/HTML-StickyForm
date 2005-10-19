@@ -1,53 +1,157 @@
-################################################################################
-#
-#   File name: StickyForms.pm
-#   Project: HTML::StickyForms
-#
-#   Author: Peter Haworth
-#   Date created: 06/06/2000
-#
-#   $Id: StickyForm.pm,v 1.1 2005/10/18 14:21:11 pmh Exp $
-#
-#   Copyright Peter Haworth 2001
-#   You may use and distribute this module according to the same terms
-#   that Perl is distributed under.
-#
-################################################################################
+# $Id: StickyForm.pm,v 1.2 2005/10/19 13:52:36 pmh Exp $
 
-package HTML::StickyForms;
+=head1 NAME
+
+HTML::StickyForm - HTML form generation for CGI or mod_perl
+
+=head1 SYNOPSIS
+
+ # mod_perl example
+
+ use HTML::StickyForm;
+ use Apache::Request;
+
+ sub handler{
+   my($r)=@_;
+   $r=Apache::Request->new($r);
+   my $f=HTML::StickyForm->new($r);
+
+   $r->send_http_header;
+   print
+     "<html><body><form>",
+     "Text field:",
+     $f->text(name => 'field1', size => 40, default => 'default value'),
+     "<br />Text area:",
+     $f->textarea(name => 'field2', cols => 60, rows => 5, default => 'stuff'),
+     "<br />Radio buttons:",
+     $f->radio_group(name => 'field3', values => [1,2,3],
+       labels => { 1=>'one', 2=>'two', 3=>'three' }, default => 2),
+     "<br />Single checkbox:",
+     $f->checkbox(name => 'field4', value => 'xyz', checked => 1),
+     "<br />Checkbox group:",
+     $f->checkbox_group(name => 'field5', values => [4,5,6],
+       labels => { 4=>'four', 5=>'five', 6=>'six' }, defaults => [5,6]),
+     "<br />Password field:",
+     $f->password(name => 'field6', size => 20),
+     '<br />",
+     $f->submit(value => ' Hit me! '),
+     '</form></body></html>',
+    ;
+    return OK;
+  }
+
+=head1 DESCRIPTION
+
+This module provides a simple interface for generating HTML C<E<lt>formE<gt>>
+elements, with default values chosen from the previous form submission. This
+module was written with mod_perl in mind, but works equally well with CGI.pm,
+including the new 3.x version.
+
+The module does not provide methods for generating all possible HTML elements,
+only those which are used in form construction. Even then, the focus is on
+those elements which benefit from having default values overridden by the
+previous form submission.
+
+In addition, this module's interface is much less flexible than CGI.pm's; all
+routines work only as methods, and there is only one way of passing parameters
+to each method (though one or two parameters have multiple names).
+This was done mainly to keep the size and complexity down.
+
+=cut
+
+
+package HTML::StickyForm;
 use strict;
 use vars qw(
   $VERSION
 );
 
-$VERSION=0.06;
+$VERSION=0.07;
 
+=head1 CLASS METHODS
 
-################################################################################
-# Class method: new($request)
-# Description: Return a new HTML::StickyForms object
-#	$request may be an instance of CGI (new or old) or Apache::Request
-# Author: Peter Haworth
+=over
+
+=item new([REQUEST])
+
+Creates a new form generation object. The single argument can be:
+
+=over
+
+=item *
+
+any object which responds to a C<param> method in the same way that L<CGI> and
+L<Apache::Request> objects do. That is, with no arguments, the names of the
+parameters are returned as a list. With a single argument, the value(s) of the
+supplied parameter is/are returned; in scalar context the first value,
+and in list context all values.
+
+=item *
+
+a plain arrayref. This will be used to construct an
+L<HTML::StickyForm::RequestHash> object, which responds as described above.
+The array will be passed directly to the RequestHash constructor, so both
+methods for specifying multiple values are allowed.
+
+=item *
+
+a plain hashref. This will be used to construct an
+L<HTML::StickyForm::RequestHash> object. Multiple values must be represented
+as arrayref values.
+
+=item *
+
+a false value. This will be used to construct an
+L<HTML::StickyForm::RequestHash> object with no parameters set.
+
+=back
+
+The constructor dies if passed an unrecognised request object.
+
+If an appropriate object is supplied, parameters will be fetched from the
+object on an as needed basis, which means that changes made to the request
+object after the form object is constructed may affect the default values
+used in generated form elements. However, once constructed, the form object's
+sticky status does not get automatically updated, so if changes made to the
+request object need to affect the form object's sticky status, set_sticky()
+must be called between request object modification and form generation.
+
+In contrast, L<HTML::StickyForm::RequestHash> objects created as part of form
+object construction use copies of the parameters from the supplied hashref or
+arrayref. This means that the changes made to the original data do not affect
+the request object, so have absolutely no effect of the behaviour of the
+form object.
+
+=cut
+
 sub new{
   my($class,$req)=@_;
 
+  # Identify the type of request
   my $type;
   if(!$req){
-    $type='empty';
-  }elsif(UNIVERSAL::isa($req,'Apache::Request')){
-    $type='apreq';
-  }elsif(UNIVERSAL::isa($req,'CGI') || UNIVERSAL::isa($req,'CGI::State')){
-    $type='CGI';
+    $type='hash';
+    $req={};
+  }elsif(eval{ local $SIG{__DIE__}; $req->can('param'); }){
+    $type='object';
+  }elsif(ref($req) eq 'HASH'){
+    $type='hash';
+  }elsif(ref($req) eq 'ARRAY'){
+    $type='array';
   }else{
-    # XXX Maybe this should die?
-    return undef;
+    require Carp;
+    Carp::croak(
+      "Unrecognised request passed to HTML::StickyForm constructor ($req)");
+  }
+  if($type eq 'hash' || $type eq 'array'){
+    require HTML::StickyForm::RequestHash;
+    $req=HTML::StickyForm::RequestHash->new($type eq 'hash' ? %$req : @$req);
   }
 
   my $self=bless {
     req => $req,
-    type => $type,
     values_as_labels => 0,
-    well_formed => '',
+    well_formed => ' /',
   },$class;
 
   # Count submitted fields
@@ -56,153 +160,300 @@ sub new{
   $self;
 }
 
-################################################################################
-# Method: set_sticky([BOOL])
-# Description: Count the number of parameters set in the request
-# Author: Peter Haworth
+=back
+
+=head1 METHODS
+
+=head2 Configuration methods
+
+=over
+
+=item set_sticky([BOOL])
+
+With no arguments, the request object's parameters are counted, and the form
+object is made sticky if one or more parameters are present, non-sticky
+otherwise.  If an argument is given, its value as a boolean determines whether
+the form object will be sticky or not. In both cases, the return value will be
+the new value of the sticky flag.
+
+A non-sticky form object always uses the values supplied to methods when
+constructing HTML elements, whereas a sticky form object will use the values
+from the request.
+
+This method is called by the constructor when the form object is created, so it
+is not usually necessary to call it explicitly. However, it may be necessary to
+call this method if parameters are set with the C<param()> method after the
+form object is created.
+
+=cut
+
 sub set_sticky{
   my $self=shift;
   return $self->{params}=!!$_[0] if @_;
 
-  $self->{params}=()=$self->{type} eq 'empty' ? () : $self->{req}->param;
+  $self->{params}=!!(()=$self->{req}->param);
 }
 
-################################################################################
-# Method: values_as_labels([BOOL])
-# Description: Set/Get the values_as_labels attribute
-# Author: Peter Haworth. Idea from Thomas Klausner (domm@zsi.at)
+=item get_sticky()
+
+Returns true if the form object is sticky.
+
+=cut
+
+sub get_sticky{
+  my($self)=@_;
+
+  !!$self->{params};
+}
+
+=item values_as_labels([BOOL])
+
+With no arguments, this method returns the C<values_as_labels> attribute,
+which determines what should happen when a value has no label in the
+checkbox_group(), radio_group() and select() methods. If this attribute
+is false (the default), no labels will be automatically generated. If it is
+true, labels will default to the corresponding value if they are not supplied
+by the user.
+
+If an argument is passed, it is used to set the C<values_as_labels> attribute.
+
+=cut
+
 sub values_as_labels{
   my $self=shift;
-  return $self->{values_as_labels}=$_[0] if @_;
+  return $self->{values_as_labels}=!!$_[0] if @_;
   $self->{values_as_labels};
 }
 
-################################################################################
-# Method: well_formed([BOOL])
-# Description: Set/Get the well_formed attribute
-# Author: Peter Haworth
+=item well_formed([BOOL])
+
+With no arguments, this method return the C<well_formed> attribute, which
+determines whether to generate well-formed XML, by including the trailing
+slash in non-container elements.
+If true, all generated elements will be well-formed.  If false, no slashes
+are added - which is unfortunately required by some older browsers.
+
+If an argument is passed, it is used to set the C<well_formed> attribute.
+
+=cut
+
 sub well_formed{
   my $self=shift;
-  return !!($self->{well_formed}=$_[0] ? '/' : '') if @_;
+  return !!($self->{well_formed}=$_[0] ? ' /' : '') if @_;
   !!$self->{well_formed};
 }
 
-################################################################################
-# Method: trim_params()
-# Description: Trim leading and trailing whitespace from all submitted values
-# Author: Peter Haworth
-sub trim_params{
-  my($self)=@_;
-  my $req=$self->{req};
-  my $type=$self->{type};
-  return if $type eq 'empty';
+=back
 
-  foreach my $k($req->param){
-    my @v=$req->param($k);
-    my $changed;
-    foreach(@v){
-      $changed+= s/^\s+//s + s/\s+$//s;
-    }
-    if($changed){
-      if($type eq 'apreq'){
-	# XXX This should work, but doesn't
-	# $req->param($k,\@v);
+=head2 HTML generation methods
 
-	# This does work, though
-	if(@v==1){
-	  $req->param($k,$v[0]);
-	}else{
-	  my $tab=$req->parms;
-	  $tab->unset($k);
-	  foreach(@v){
-	    $tab->add($k,$_);
-	  }
-	}
-      }else{
-	$req->param($k,@v)
-      }
-    }
+Most of these methods are specified as taking PAIRLIST arguments. This means
+that arguments must be passed as a list of name/value pairs. For example:
+
+  $form->text(name => 'fred',value => 'bloggs');
+
+This represents two arguments; "name" with a value of "fred", and "value"
+with a value of "bloggs".
+
+In cases where sticky values are useful, there are two ways of specifying the
+values, depending on whether stickiness is required for the element being
+generated. To set sticky value defaults, use the C<default> argument
+(or C<defaults> where multiple elements are being generated). Alternatively,
+to set values which are not affected by previous values entered by the user,
+use the C<value> argument (or C<selected> or C<checked>, depending on the
+type of element being generated).
+
+=over
+
+=item form_start(PAIRLIST)
+
+Generates a C<E<lt>formE<gt>> start tag. All arguments are interpreted
+as attributes for the element. All names and values are HTML escaped.
+The following arguments are treated specially:
+
+C<method>: Defaults to C<GET>
+
+=cut
+
+sub form_start{
+  my($self,%args)=@_;
+  $args{method}='GET' unless exists $args{method};
+
+  my $field='<form';
+  while(my($name,$val)=each %args){
+    _escape($name);
+    _escape($val);
+    $field.=qq( $name="$val");
   }
+  $field.='>';
+
+  $field;
 }
 
-################################################################################
-# Subroutine: _escape($string)
-# Description: Escape HTML-special characters in $string
-# Author: Peter Haworth
-sub _escape($){
-  $_[0]=~s/([<>&"\177-\377])/sprintf "&#%d;",ord $1/ge;
+=item form_start_multipart(PAIRLIST)
+
+As form_start(), but the C<enctype> argument defaults to C<multipart/form-data>.
+
+=cut
+
+sub form_start_multipart{
+  my $self=shift;
+  $self->form_start(enctype => 'mutipart/form-data',@_);
 }
 
-################################################################################
-# Method: text(%args)
-# Description: Return an HTML <input type="text"> field
-# Special %args elements:
-#	type => type attribute value, defaults to "text"
-#	default => value attribute value, if sticky values not present
-# Author: Peter Haworth
+=item form_end()
+
+Generates a C<E<lt>formE<gt>> end tag.
+
+=cut
+
+sub form_end{
+  '</form>';
+}
+
+=item text(PAIRLIST)
+
+Generates an C<E<lt>inputE<gt>> element.  In general, arguments are interpreted
+as attributes for the element. All names and values are HTML escaped. The
+following arguments are treated specially:
+
+C<type>: Defaults to C<text>
+
+C<value>: Unconditional value. If present, causes C<default> and any sticky
+value to be ignored.
+
+C<default>: Conditional value, ignored if C<value> is present. If the form is
+sticky, the sticky value will be used for the C<value> attribute's value.
+Otherwise, the supplied C<default> will be used.
+A C<default> attribute is never created.
+
+=cut
+
 sub text{
   my($self,%args)=@_;
   my $type=delete $args{type} || 'text';
   my $name=delete $args{name};
-  my $value=delete $args{default};
-  $value=$self->{req}->param($name) if $self->{params};
+  my $value;
+  if(exists $args{value}){
+    $value=delete $args{value};
+    delete $args{default};
+  }else{
+    $value=delete $args{default};
+    $value=$self->{req}->param($name) if $self->{params};
+  }
 
+  _escape($type);
   _escape($name);
   _escape($value);
 
   my $field=qq(<input type="$type" name="$name" value="$value");
   while(my($key,$val)=each %args){
-    $field.=qq( $key="$val"); # XXX Escape?
+    _escape($key);
+    _escape($val);
+    $field.=qq( $key="$val");
   }
 
   return "$field$self->{well_formed}>";
 }
 
-################################################################################
-# Method: password(%args)
-# Description: Return an HTML <input type="password"> field
-#	As text()
-# Author: Peter Haworth
+=item hidden(PAIRLIST)
+
+As text(), but produces an input element of type C<hidden>.
+
+=cut
+
+sub hidden{
+  my $self=shift;
+  $self->text(@_,type => 'hidden');
+}
+
+=item password(PAIRLIST)
+
+As text(), but produces an input element of type C<password>.
+
+=cut
+
 sub password{
   my $self=shift;
   $self->text(@_,type => 'password');
 }
 
-################################################################################
-# Method: textarea(%args)
-# Description: Return an HTML <textarea> tag
-# Special %args elements:
-#	default => field contents, if sticky values not present
-# Author: Peter Haworth
+=item textarea(PAIRLIST)
+
+Generates a E<lt>textareaE<gt> container. All arguments are used directly
+to generate attributes for the start tag, except for those listed below.
+All values are HTML-escaped.
+
+C<value>: Unconditional value. If present, specifies the contents of the
+container, and causes C<default> and any sticky value to be ignored. A
+C<value> attribute is never created.
+
+C<default>: Conditional value, ignored if C<value> is present. If the form is
+stikcy, the sticky value wil be used for the container contents. Otherwise,
+sticky, the supplied C<default> will be used.
+A C<default> attribute is never created.
+
+=cut
+
 sub textarea{
   my($self,%args)=@_;
   my $name=delete $args{name};
-  my $value=delete $args{default};
-  $value=$self->{req}->param($name) if $self->{params};
+  my $value;
+  if(exists $args{value}){
+    $value=delete $args{value};
+    delete $args{default};
+  }else{
+    $value=delete $args{default};
+    $value=$self->{req}->param($name) if $self->{params};
+  }
 
   _escape($name);
   _escape($value);
 
   my $field=qq(<textarea name="$name");
   while(my($key,$val)=each %args){
-    $field.=qq( $key="$val"); # XXX Escape?
+    _escape($key);
+    _escape($val);
+    $field.=qq( $key="$val");
   }
 
   return "$field>$value</textarea>";
 }
 
-################################################################################
-# Method: checkbox(%args)
-# Description: Return a single HTML <input type="checkbox"> tag
-# Special %args elements:
-#	checked => whether the box is checked, if sticky values not present
-# Author: Peter Haworth
+=item checkbox(PAIRLIST)
+
+Generates a single C<checkbox> type C<E<lt>inputE<gt>> element. All arguments
+are used directly to generate attributes for the tag, except for those listed
+below. All values are HTML-escaped.
+
+C<checked>: Unconditional status. If present, used to decide whether to include
+a checked attribute, and causes C<default> and any sticky value to be ignored.
+
+C<default>: Conditional status, ignored if C<checked> is present. If the form
+is sticky, the sticky value will be used to determine whether to include a
+checked attribute. Otherwise, the supplied C<default> will be used.
+
+If the decision to include the C<checked> attribute is based on the sticky
+value, the sticky parameter must include at least one value which is the same
+as the supplied C<value> argument. If the decision is based on the value of
+the C<checked> or C<default> arguments, the supplied argument need only be
+true for the C<checked> attribute to be created.
+
+=cut
+
 sub checkbox{
   my($self,%args)=@_;
   my $name=delete $args{name};
   my $value=delete $args{value};
-  my $checked=delete $args{checked};
-  $checked=$self->{req}->param($name) eq $value if $self->{params};
+  my $checked;
+  if(exists $args{checked}){
+    $checked=delete $args{checked};
+    delete $args{default};
+  }else{
+    $checked=delete $args{default};
+    $value='' unless defined($value);
+    $checked=grep $_ eq $value,$self->{req}->param($name) if $self->{params};
+  }
 
   _escape($name);
   _escape($value);
@@ -210,47 +461,92 @@ sub checkbox{
   my $field=qq(<input type="checkbox" name="$name" value="$value");
   $field.=' checked="checked"' if $checked;
   while(my($key,$val)=each %args){
-    $field.=qq( $key="$val"); # XXX Escape?
+    _escape($key);
+    _escape($val);
+    $field.=qq( $key="$val");
   }
 
   return "$field$self->{well_formed}>";
 }
 
-################################################################################
-# Method: checkbox_group(%args)
-# Description: Return a group of HTML <input type="checkbox"> tags
-# Special %args elements:
-#	type => defaults to "checkbox"
-#	value/values => arrayref of field values, defaults to label keys
-#	label/labels => hashref of field names, no default
-#	escape => whether to escape HTML characters in labels
-#	default/defaults => arrayref of selected values, if no sticky values
-#	linebreak => whether to add <br>s after each checkbox
-#	values_as_labels => override the values_as_labels attribute
-# Author: Peter Haworth
+=item checkbox_group(PAIRLIST)
+
+Generates a group of C<checkbox> type C<E<lt>inputE<gt>> elements. If called in
+list context, returns a list of elements, otherwise a single string containing
+all tags. All arguments are used directly to generate attributes in each tag,
+except for those listed below. Unless otherwise stated, all names and values
+are HTML-escaped.
+
+C<values> or C<value>: An arrayref of values.
+One element will be generated for each element, in the order supplied.
+If not supplied, the label keys will be used instead.
+
+C<labels> or C<label>: A hashref of labels.
+Each element generated will be followed by the label keyed
+by the value. Values will be HTML-escaped unless a false C<escape> argument
+is supplied.  If no label is present for a given value and C<values_as_labels>
+is true, the value will also be used for the label.
+
+C<escape_labels>: If present and false, labels will not be HTML-escaped.
+
+C<checked>: Unconditional status. If present, used to decide whether each
+checkbox is marked as checked, and causes C<default>, C<defaults> and any
+sticky values to be ignored. May be a single value or arrayref of values.
+
+C<defaults> or C<default>: Conditional status, ignored if C<checked> is present.
+If the form is sticky, individual checkboxes are marked as checked if the
+sticky parameter includes at least one value which is the same as the individual
+checkbox's value. Otherwise, the supplied C<defaults> or C<default> values are
+used in the same way. May be a single value or arrayref of values.
+
+C<linebreak>: If true, each element/label will be followed by a C<E<lt>brE<gt>>
+element.
+
+C<values_as_labels>: If supplied, overrides the form object's
+C<values_as_labels> attribute.
+
+=cut
+
 sub checkbox_group{
   my($self,%args)=@_;
   my $type=delete $args{type} || 'checkbox';
   my $name=delete $args{name};
-  my $labels=delete $args{labels} || delete $args{label} || {};
-  my $escape=delete $args{escape};
-  my $values=delete $args{values} || delete $args{value} || [keys %$labels];
-  my $defaults=delete $args{exists $args{defaults} ? 'defaults' : 'default'};
-  $defaults=[] unless defined $defaults;
-  $defaults=[$defaults] if ref($defaults) ne 'ARRAY';
+  my $labels=delete $args{label} || {};
+  $labels=delete $args{labels} if exists $args{labels};
+  my $escape_labels=1;
+  $escape_labels=delete $args{escape_labels} if exists $args{escape_labels};
+  my $values=delete $args{value};
+  $values=delete $args{values} if exists $args{values};
+  $values||=[keys %$labels];
+  my $checked=[];
+  if(exists $args{checked}){
+    $checked=delete $args{checked};
+    $checked=[$checked] if ref($checked) ne 'ARRAY';
+    delete $args{default};
+    delete $args{defaults};
+  }else{
+    if(exists $args{default} || $args{defaults}){
+      $checked=delete $args{default};
+      $checked=delete $args{defaults} if exists $args{defaults};
+      $checked=[$checked] if ref($checked) ne 'ARRAY';
+    }
+    $checked=[$self->{req}->param($name)] if $self->{params};
+  }
+  my %checked=map +($_,1),@$checked;
   my $br=delete $args{linebreak} ? "<br$self->{well_formed}>" : '';
   my $v_as_l=$self->{values_as_labels};
   if(exists $args{values_as_labels}){
     $v_as_l=delete $args{values_as_labels};
   }
-  my %checked=map { ; $_ => 1 }
-    $self->{params} ? $self->{req}->param($name) : @$defaults;
 
+  _escape($type);
   _escape($name);
 
   my $field=qq(<input type="$type" name="$name");
   while(my($key,$val)=each %args){
-    $field.=qq( $key="$val"); # XXX Escape?
+    _escape($key);
+    _escape($val);
+    $field.=qq( $key="$val");
   }
 
   my @checkboxes;
@@ -259,11 +555,13 @@ sub checkbox_group{
     my $field=qq($field value="$evalue");
     $field.=' checked="checked"' if $checked{$value};
     $field.="$self->{well_formed}>";
-    if((my $label=$v_as_l && !exists $labels->{$value}
-      ? $value : $labels->{$value})=~/\S/
-    ){
-      _escape($label) if $escape;
+
+    if(exists $labels->{$value}){
+      my $label=$labels->{$value};
+      _escape($label) if $escape_labels;
       $field.=$label;
+    }elsif($v_as_l){
+      $field.=$evalue;
     }
     $field.=$br;
     push @checkboxes,$field;
@@ -273,341 +571,176 @@ sub checkbox_group{
   return join '',@checkboxes;
 }
 
-################################################################################
-# Method: radio_group(%args)
-# Description: Return a group of HTML <input type="radio"> tags
-# Special %args elements:
-#	value/values => arrayref of field values, defaults to label keys
-#	label/labels => hashref of field labels, no default
-#	escape => whether to escape HTML characters in labels
-#	defaults/default => selected value, if no sticky values
-#	linebreak => whether to add <br>s after each checkbox
-# Author: Peter Haworth
-sub radio_group{
-  my($self,%args)=@_;
+=item radio_group(PAIRLIST)
 
-  $self->checkbox_group(%args,type => 'radio');
+As checkbox_group(), but setting C<type> to C<radio>.
+
+=cut
+
+sub radio_group{
+  my $self=shift;
+
+  $self->checkbox_group(@_,type => 'radio');
 }
 
-################################################################################
-# Method: select(%args)
-# Description: Return an HTML <select> tag
-# Special %args elements:
-#	value/values => arrayref of field values, defaults to label keys
-#	label/labels => hashref of field labels, no default
-#	default/defaults => selected value(s), if no sticky values
-#	size => if positive, sets multiple
-#	values_as_labels => override the values_as_labels attribute
-#		Of little value, since this is HTML's default, anyway
-# Author: Peter Haworth
+=item select(%args)
+
+Generates a C<E<lt>selectE<gt>> element. All arguments are used directly to
+generate attributes in the C<E<lt>selectE<gt>> element, except for those listed below. Unless otherwise stated, all names and values are HTML-escaped.
+
+C<values> or C<value>: An arrayref of values.
+One C<E<lt>optionE<gt>> element will be created inside the C<E<lt>selectE<gt>>
+element for each entry, in the supplied order.  Defaults to label keys.
+
+C<labels> or C<label>: A hashref of labels.
+Each C<E<lt>optionE<gt>> tag generated will contain the
+label keyed by its value. If no label is present for a given value, no label
+will be generated. Defaults to an empty hashref.
+
+C<selected>: Unconditional status. If present, the supplied values will be
+used to decide which options to mark as selected, and C<defaults>, C<default>
+and any sticky values will be ignored. May be a single value or arrayref.
+
+C<defaults> or C<default>: Consitional status, ignored if C<selected> is
+supplied. If the form is sticky, the sticky values will be used to decide which
+options are selected. Otherwise, the supplied values will be used.
+May be a single value or arrayref.
+
+C<multiple>: If true, the C<multiple> attribute is set to C<multiple>.
+
+C<values_as_labels>: Overrides the form object's C<values_as_labels> attribute.
+This is of little value, since it's the default behaviour of HTML in any case.
+
+=cut
+
 sub select{
   my($self,%args)=@_;
   my $name=delete $args{name};
   my $multiple=delete $args{multiple};
-  my $labels=delete $args{labels} || delete $args{label} || {};
-  my $values=delete $args{values} || delete $args{value} || [keys %$labels];
-  my $defaults=delete $args{exists $args{defaults} ? 'defaults' : 'default'};
-  $defaults=[] unless defined $defaults;
-  $defaults=[$defaults] if ref($defaults) ne 'ARRAY';
+  my $labels=delete $args{label} || {};
+  $labels=delete $args{labels} if exists $args{labels};
+  my $values=delete $args{values};
+  $values=delete $args{value} if exists $args{value};
+  $values||=[keys %$labels];
+  my $selected;
+  if(exists $args{selected}){
+    $selected=delete $args{selected};
+    delete $args{defaults};
+    delete $args{default};
+  }else{
+    $selected=delete $args{default};
+    $selected=delete $args{defaults} if exists $args{defaults};
+    $selected=[$self->{req}->param($name)] if $self->{params};
+  }
+  if(!defined $selected){ $selected=[]; }
+  elsif(ref($selected) ne 'ARRAY'){ $selected=[$selected]; }
+  my %selected=map +($_,1),@$selected;
   my $v_as_l=$self->{values_as_labels};
   if(exists $args{values_as_labels}){
     $v_as_l=delete $args{values_as_labels};
   }
-  my %selected=map { ; $_ => 1 }
-    $self->{params} ? $self->{req}->param($name) : @$defaults;
 
   _escape($name);
   my $field=qq(<select name="$name");
   while(my($key,$val)=each %args){
-    $field.=qq( $key="$val"); # XXX Escape?
+    _escape($key);
+    _escape($val);
+    $field.=qq( $key="$val");
   }
   $field.=' multiple="multiple"' if $multiple;
-  $field.=">\n";
+  $field.=">";
+
   for my $value(@$values){
     _escape(my $evalue=$value);
     $field.=qq(<option value="$evalue");
     $field.=' selected="selected"' if $selected{$value};
     $field.=">";
-    if((my $label=$v_as_l && !exists $labels->{$value}
-      ? $value : $labels->{$value})=~/\S/
-    ){
+    if(exists $labels->{$value}){
+      my $label=$labels->{$value};
       _escape($label);
       $field.=$label;
+    }elsif($v_as_l){
+      $field.=$evalue;
     }
-    $field.="</option>\n";
+    $field.="</option>";
   }
+
   $field.="</select>";
 
   $field;
 }
 
-################################################################################
+=item submit(PAIRLIST)
+
+Generates an C<E<lt>inputE<gt>> of type C<submit>. All of the supplied
+arguments are HTML-escaped, and used directly as attributes. C<submit>
+fields are not sticky.
+
+=cut
+
+sub submit{
+  my($self,%args)=@_;
+  $args{type}='submit' unless exists $args{type};
+
+  my $field='<input';
+  while(my($key,$val)=each %args){
+    _escape($key);
+    _escape($val);
+    $field.=qq( $key="$val");
+  }
+  $field.="$self->{well_formed}>";
+
+  $field;
+}
+
+
+=back
+
+
+
+
+=begin private
+
+=head1 PRIVATE SUBROUTINES
+
+These subs are only intended for internal use.
+
+=over
+
+=item _escape($string)
+
+Escape HTML-special characters in $string, in place. If $string is not defined,
+it will be updated to an empty string.
+
+=cut
+
+sub _escape($){
+  if(defined $_[0]){
+    $_[0]=~s/([<>&"]|[^\0-\177])/sprintf "&#%d;",ord $1/ge;
+  }else{
+    $_[0]='';
+  }
+}
+
+
+=back
+
+=end private
+
+=cut
+
 # Return true to require
 1;
 
 
-__END__
-
-=head1 NAME
-
-HTML::StickyForms - HTML form generation for CGI or mod_perl
-
-=head1 SYNOPSIS
-
- # mod_perl example
-
- use HTML::StickyForms;
- use Apache::Request;
-
- sub handler{
-   my($r)=@_;
-   $r=Apache::Request->new($r);
-   my $f=HTML::StickyForms->new($r);
-
-   $r->send_http_header;
-   print
-     "<HTML><BODY><FORM>",
-     "Text field:",
-     $f->text(name => 'field1', size => 40, default => 'default value'),
-     "<BR>Text area:",
-     $r->textarea(name => 'field2', cols => 60, rows => 5, default => 'stuff'),
-     "<BR>Radio buttons:",
-     $r->radio_group(name => 'field3', values => [1,2,3],
-       labels => { 1=>'one', 2=>'two', 3=>'three' }, default => 2),
-     "<BR>Single checkbox:",
-     $r->checkbox(name => 'field4', value => 'xyz', checked => 1),
-     "<BR>Checkbox group:",
-     $r->checkbox_group(name => 'field5', values => [4,5,6],
-       labels => { 4=>'four', 5=>'five', 6=>'six' }, defaults => [5,6]),
-     "<BR>Password field:",
-     $r->password(name => 'field6', size => 20),
-     '<BR><INPUT type="submit" value=" Hit me! ">',
-     '</FORM></BODY></HTML>',
-    ;
-    return OK;
-  }
-
-=head1 DESCRIPTION
-
-This module provides a simple interface for generating HTML E<lt>FORME<gt>
-fields, with default values chosen from the previous form submission. This
-module was written with mod_perl in mind, but works equally well with CGI.pm,
-including the new 3.x version.
-
-The module does not provide methods for generating all possible form fields,
-only those which benefit from having default values overridden by the previous
-form submission. This means that, unlike CGI.pm, there are no routines for
-generating E<lt>FORME<gt> tags, hidden fields or submit fields. Also this
-module's interface is much less flexible than CGI.pm's. This was done mainly
-to keep the size and complexity down.
-
-=head2 METHODS
-
-=over 4
-
-=item HTML::StickyForms-E<gt>new($req)
-
-Creates a new form generation object. The single argument can be an
-Apache::Request object, a CGI object (v2.x), a CGI::State object (v3.x),
-or an object of a subclass of any of the above. As a special case, if the
-argument is C<undef> or C<''>, the object created will behave as if a request
-object with no submitted fields was given.
-
-=item $f-E<gt>set_sticky([BOOL])
-
-If a true argument is passed, the form object will be sticky, using the request
-object's parameters to fill the form. If a false argument is passed, the form
-object will not be sticky, using the user-supplied default values to fill the
-form. If no argument is passed, the request object's parameters are counted,
-and the form object is made sticky if one or more parameters are present,
-non-sticky otherwise.
-
-This method is called by the constructor when a form object is created, so it
-is not usually necessary to call it explicitly. However, it may be necessary to
-call this method if parameters are set with the C<param()> method after the
-form object is created.
-
-=item $f-E<gt>trim_params()
-
-Removes leading and trailing whitespace from all submitted values.
-
-=item $f-E<gt>values_as_labels([BOOL])
-
-With no arguments, this method returns the C<values_as_labels> attribute. This
-attribute determines what to do when a value has no label in the
-C<checkbox_group()>, C<radio_group()> and C<select()> methods. If this attribute
-is false (the default), no labels will be automatically generated. If it is
-true, labels will default to the corresponding value if they are not supplied
-by the user.
-
-If an argument is passed, it is used to set the C<values_as_labels> attribute.
-
-=item $f-E<gt>well_formed([BOOL])
-
-With no arguments, this method return the C<well_formed> attribute. This
-attribute determines whether to generate well-formed XML, by including the
-trailing slash in non-container elements. If this attribute is false, no
-slashes are added - this is the default, since some older browsers don't
-behave sensibly in the face of such elements. If true, all elements will
-be well-formed.
-
-If an argument is passed, it is used to set the C<well_formed> attribute.
-
-=item $f-E<gt>text(%args)
-
-Generates an E<lt>INPUTE<gt> tag, with a type of C<"text">. All arguments
-are used directly to generate attributes for the tag, with the following
-exceptions:
-
-=over 8
-
-=item type,
-
-Defaults to C<"text">
-
-=item name,
-
-The value passed will have all HTML-special characters escaped.
-
-=item default,
-
-Specifies the default value of the field if no fields were submitted in the
-request object passed to C<new()>. The value used will have all HTML-special
-characters escaped.
-
-=back
-
-=item $f-E<gt>password(%args)
-
-As C<text()>, but generates a C<"password"> type field.
-
-=item $f-E<gt>textarea(%args)
-
-Generates a E<lt>TEXTAREAE<gt> container. All arguments are used directly
-to generate attributes for the start tag, except for:
-
-=over 8
-
-=item name.
-
-This value will be HTML-escaped.
-
-=item default.
-
-Specifies the default contents of the container if no fields were submitted.
-The value used will be HTML-escaped.
-
-=back
-
-=item $f-E<gt>checkbox(%args)
-
-Generates a single C<"checkbox"> type E<lt>INPUTE<gt> tag. All arguments are
-used directly to generate attributes for the tag, except for:
-
-=over 8
-
-=item name, value
-
-The values passed will be HTML-escaped.
-
-=item checked
-
-Specifies the default state of the field if no fields were submitted.
-
-=back
-
-=item $f-E<gt>checkbox_group(%args)
-
-Generates a group of C<"checkbox"> type E<lt>INPUTE<gt> tags. If called in
-list context, returns a list of tags, otherwise a single string containing
-all tags. All arguments are used directly to generate attributes in each tag,
-except for the following:
-
-=over 8
-
-=item type
-
-Defaults to C<"checkbox">.
-
-=item name
-
-This value will be HTML-escaped.
-
-=item values, or value
-
-An arrayref of values. One tag will be generated for each element. The values
-will be HTML-escaped. Defaults to label keys.
-
-=item labels, or label
-
-A hashref of labels. Each tag generated will be followed by the label keyed
-by the value. If no label is present for a given value, no label will be
-generated. Defaults to an empty hashref.
-
-=item escape
-
-If this value is true, the labels will be HTML-escaped.
-
-=item defaults, or default
-
-A single value or arrayref of values to be checked if no fields were submitted.
-Defaults to an empty arrayref.
-
-=item linebreak
-
-If true, each tag/label will be followed by a E<lt>BRE<gt> tag.
-
-=item values_as_labels
-
-Overrides the form object's C<values_as_labels> attribute.
-
-=back
-
-=item $f-E<gt>radio_group(%args)
-
-As C<checkbox_group()>, but generates C<"radio"> type tags.
-
-=item $f-E<gt>select(%args)
-
-Generates a E<lt>SELECTE<gt> tags. All arguments are used directly to generate
-attributes in the E<lt>SELECTE<gt> tag, except for the following:
-
-=over 8
-
-=item name:
-
-This value will be HTML-escaped.
-
-=item values or value
-
-An arrayref of values. One E<lt>OPTIONE<gt> tag will be created inside the
-E<lt>SELECTE<gt> tag for each element. The values will be HTML-escaped.
-Defaults to label keys.
-
-=item labels or label
-
-A hashref of labels. Each E<lt>OPTIONE<gt> tag generated will contain the
-label keyed by its value. If no label is present for a given value, no label
-will be generated. Defaults to an empty hashref.
-
-=item defaults or default
-
-A single value or arrayref of values to be selected if no fields were
-submitted. Defaults to an empty arrayref.
-
-=item multiple
-
-If a true value is passed, the C<MULTIPLE> attribute is set.
-
-=item values_as_labels,
-
-Overrides the form object's C<values_as_labels> attribute.
-
-=back
-
-=back
 
 =head1 AUTHOR
 
-Peter Haworth E<lt>pmh@edison.ioppublishing.comE<gt>
+Copyright (C) Institute of Physics Publishing 2000-2005
+
+	Peter Haworth <pmh@edison.ioppublishing.com>
+
+You may use and distribute this module according to the same terms
+that Perl is distributed under.
+
 
