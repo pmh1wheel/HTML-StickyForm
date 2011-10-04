@@ -1,8 +1,11 @@
-# $Id: 10_escape.t,v 1.1 2005/10/19 13:58:39 pmh Exp $
+#!/usr/bin/perl
 
 
-use Test::More tests => 9;
+use Test::More tests => 10;
+use Test::NoWarnings;
+use blib;
 use strict;
+use warnings;
 
 BEGIN { use_ok('HTML::StickyForm'); }
 ok(*_escape=\&HTML::StickyForm::_escape,'"import" sub');

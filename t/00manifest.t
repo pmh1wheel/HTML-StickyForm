@@ -1,8 +1,9 @@
-# $Id: 00manifest.t,v 1.2 2011/10/04 19:58:19 pmh Exp $
+#!/usr/bin/perl
 
 use Test::More;
-use File::Find;
+use Test::NoWarnings;
 use strict;
+use warnings;
 
 # Make sure we're on the developer's system
 BEGIN{
@@ -14,11 +15,11 @@ BEGIN{
   -e 'MANIFEST'
     or BAIL_OUT("Can't find the MANIFEST file");
 
-  -e '.cvsignore'
+  -d '.git'
     or plan skip_all => 'Only useful on dev system';
 }
 
-plan tests => 3;
+plan tests => 4;
 use ExtUtils::Manifest qw(manifind manicheck filecheck);
 
 # Check the manifest is accurate
@@ -34,37 +35,28 @@ use ExtUtils::Manifest qw(manifind manicheck filecheck);
     or diag "    Files not listed in MANIFEST: @extra";
 }
 
-# Check that everything's in CVS
+# Check that everything's in git
 {
-  open my $fh,'<','.cvsignore'
-    or BAIL_OUT("Can't open .cvsignore: $!");
-  my %ignore;
+  open my $fh,'git status 2>&1 |'
+    or fail("Can't open git status: $? $!"), last;
+  my @files;
+  local $/="\n#\n";
   while(<$fh>){
-    chomp;
-    ++$ignore{$_};
-  }
-
-  my %missing;
-  my $all_files=manifind();
-  while(my $filename=each %$all_files){
-    next if $filename=~m#(?:\A|/)CVS/#
-      || $filename=~m#(?:\A|/)\.[^/]+\.swp\z#
-      || $ignore{$filename};
-    if(my($dir1)=$filename=~m#\A([^/]+)/#){
-      next if $ignore{$dir1};
-    }
-    ++$missing{$filename};
-    my($dir,$file)=$filename=~m#\A(.*?)([^/]+)\z#;
-    chop $dir or $dir='.';
-    open my $fh,'<',"$dir/CVS/Entries" or next;
-    while(<$fh>){
-      m#\A/\Q$file\E/[^0]# or next;
-      delete $missing{$filename};
-      last;
+    if(!@files){
+      if(/\A# Untracked files/){
+        push @files,undef;
+	$/="\n";
+      }
+    }else{
+      my($file)=/\A#\s+(.+)\s+\z/
+        or fail("Can't parse git status line: $_"), last;
+      push @files,$file;
     }
   }
-  my @missing=sort keys %missing;
-  ok(!@missing,'CVS check')
-    or diag "    Files not in CVS: @missing";
+  close $fh
+    or fail("Can't close git status: $? $!"), last;
+  shift @files;
+  ok(!@files,'git check')
+    or diag "    Files not in git: @files";
 }
 

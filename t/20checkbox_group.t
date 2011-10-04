@@ -1,8 +1,11 @@
-# $Id: 20checkbox_group.t,v 1.3 2011/10/04 19:58:19 pmh Exp $
+#!/usr/bin/perl
 
-use Test::More no_plan;
-use Test::XML;
+use Test::More tests => 92;
+use Test::NoWarnings;
+use Test::XML::Simple;
+use blib;
 use strict;
+use warnings;
 
 my $Form;
 BEGIN{ use_ok($Form='HTML::StickyForm'); }
@@ -59,54 +62,54 @@ for(
   ],
 
   [{name => 'abc',values => [456,789]},'abc/456,789',
-    '<f><input type="checkbox" name="abc" value="456"/>
-	<input type="checkbox" name="abc" value="789"/></f>',
-    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>
-        <input type="checkbox" name="abc" value="789" checked="checked"/></f>',
+    '<f><input type="checkbox" name="abc" value="456"/>'.
+	'<input type="checkbox" name="abc" value="789"/></f>',
+    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>'.
+        '<input type="checkbox" name="abc" value="789" checked="checked"/></f>',
   ],
   [{name => 'abc',values => [456,789],checked=>456},'abc/456,789/checked=456',
-    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>
-	<input type="checkbox" name="abc" value="789"/></f>',
-    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>
-        <input type="checkbox" name="abc" value="789"/></f>',
+    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>'.
+	'<input type="checkbox" name="abc" value="789"/></f>',
+    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>'.
+        '<input type="checkbox" name="abc" value="789"/></f>',
   ],
   [{name => 'abc',values => [456,789],default=>456},'abc/456,789/default=456',
-    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>
-	<input type="checkbox" name="abc" value="789"/></f>',
-    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>
-        <input type="checkbox" name="abc" value="789" checked="checked"/></f>',
+    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>'.
+	'<input type="checkbox" name="abc" value="789"/></f>',
+    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>'.
+        '<input type="checkbox" name="abc" value="789" checked="checked"/></f>',
   ],
   [{name => 'abc',values => [456,789],checked=>[456,789]},'abc/456,789/checked',
-    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>
-	<input type="checkbox" name="abc" value="789" checked="checked"/></f>',
-    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>
-        <input type="checkbox" name="abc" value="789" checked="checked"/></f>',
+    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>'.
+	'<input type="checkbox" name="abc" value="789" checked="checked"/></f>',
+    '<f><input type="checkbox" name="abc" value="456" checked="checked"/>'.
+        '<input type="checkbox" name="abc" value="789" checked="checked"/></f>',
   ],
   [{name => 'abc',values => [456,789],linebreak => 1},'abc/456,789/linebreak',
-    '<f><input type="checkbox" name="abc" value="456"/><br />
-	<input type="checkbox" name="abc" value="789"/><br /></f>',
-    '<f><input type="checkbox" name="abc" value="456" checked="checked"/><br />
-        <input type="checkbox" name="abc" value="789" checked="checked"/><br /></f>',
+    '<f><input type="checkbox" name="abc" value="456"/><br />'.
+	'<input type="checkbox" name="abc" value="789"/><br /></f>',
+    '<f><input type="checkbox" name="abc" value="456" checked="checked"/><br />'.
+        '<input type="checkbox" name="abc" value="789" checked="checked"/><br /></f>',
   ],
 
   [{name=>'abc',values=>[345,678],values_as_labels=>1},'abc/345,678/val',
-    '<f><input type="checkbox" name="abc" value="345"/>345
-        <input type="checkbox" name="abc" value="678"/>678</f>',
-    '<f><input type="checkbox" name="abc" value="345"/>345
-        <input type="checkbox" name="abc" value="678"/>678</f>',
+    '<f><input type="checkbox" name="abc" value="345"/>345'.
+        '<input type="checkbox" name="abc" value="678"/>678</f>',
+    '<f><input type="checkbox" name="abc" value="345"/>345'.
+        '<input type="checkbox" name="abc" value="678"/>678</f>',
   ],
   [{name=>'abc',values=>[345,678],labels=>{345=>'X',678=>'Y'}},'abc/345,678/XY',
-    '<f><input type="checkbox" name="abc" value="345"/>X
-        <input type="checkbox" name="abc" value="678"/>Y</f>',
-    '<f><input type="checkbox" name="abc" value="345"/>X
-        <input type="checkbox" name="abc" value="678"/>Y</f>',
+    '<f><input type="checkbox" name="abc" value="345"/>X'.
+        '<input type="checkbox" name="abc" value="678"/>Y</f>',
+    '<f><input type="checkbox" name="abc" value="345"/>X'.
+        '<input type="checkbox" name="abc" value="678"/>Y</f>',
   ],
   [{name=>'abc',values=>[345,678],labels=>{345=>'X'},values_as_labels=>1},
     'abc/345,678/X/val',
-    '<f><input type="checkbox" name="abc" value="345"/>X
-        <input type="checkbox" name="abc" value="678"/>678</f>',
-    '<f><input type="checkbox" name="abc" value="345"/>X
-        <input type="checkbox" name="abc" value="678"/>678</f>',
+    '<f><input type="checkbox" name="abc" value="345"/>X'.
+        '<input type="checkbox" name="abc" value="678"/>678</f>',
+    '<f><input type="checkbox" name="abc" value="345"/>X'.
+        '<input type="checkbox" name="abc" value="678"/>678</f>',
   ],
 
   [{name=>'abc',labels=>{456,'X'}},'abc/labels',
@@ -127,17 +130,17 @@ for(
   my($args,$name,$expect_empty,$expect_full)=@$_;
 
   my $out='<f>'.$empty->checkbox_group($args).'</f>';
-  is_xml($out,$expect_empty,"$name (empty, ref)")
-    or diag($expect_empty),diag($out);
+  xml_is_deeply($out,'/',$expect_empty,"$name (empty, ref)")
+    or diag("expect: $expect_empty"),diag("got: $out");
   $out='<f>'.$empty->checkbox_group(%$args).'</f>';
-  is_xml($out,$expect_empty,"$name (empty, flat)")
-    or diag($expect_empty),diag($out);
+  xml_is_deeply($out,'/',$expect_empty,"$name (empty, flat)")
+    or diag("expect: $expect_empty"),diag("got: $out");
   $out='<f>'.$full->checkbox_group($args).'</f>';
-  is_xml($out,$expect_full,"$name (full, ref)")
-    or diag($expect_full),diag($out);
+  xml_is_deeply($out,'/',$expect_full,"$name (full, ref)")
+    or diag("expect: $expect_full"),diag("got: $out");
   $out='<f>'.$full->checkbox_group(%$args).'</f>';
-  is_xml($out,$expect_full,"$name (full, flat)")
-    or diag($expect_full),diag($out);
+  xml_is_deeply($out,'/',$expect_full,"$name (full, flat)")
+    or diag("expect: $expect_full"),diag("got: $out");
 }
 
 

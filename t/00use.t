@@ -1,7 +1,10 @@
-# $Id: 00use.t,v 1.1 2005/10/19 13:57:28 pmh Exp $
+#!/usr/bin/perl
 
-use Test::More tests => 2;
+use Test::More tests => 3;
+use Test::NoWarnings;
+use blib;
 use strict;
+use warnings;
 
 BEGIN{
   use_ok('HTML::StickyForm');

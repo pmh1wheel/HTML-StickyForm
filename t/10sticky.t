@@ -1,7 +1,10 @@
-# $Id: 10sticky.t,v 1.1 2005/10/19 14:01:03 pmh Exp $
+#!/usr/bin/perl
 
-use Test::More tests => 16;
+use Test::More tests => 17;
+use Test::NoWarnings;
+use blib;
 use strict;
+use warnings;
 
 my $Form;
 BEGIN{

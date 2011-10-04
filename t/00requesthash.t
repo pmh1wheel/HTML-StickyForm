@@ -1,7 +1,10 @@
-# $Id: 00requesthash.t,v 1.1 2005/10/19 13:59:57 pmh Exp $
+#!/usr/bin/perl
 
-use Test::More tests => 25;
+use Test::More tests => 26;
+use Test::NoWarnings;
+use blib;
 use strict;
+use warnings;
 
 my $Hash;
 BEGIN{ use_ok($Hash='HTML::StickyForm::RequestHash'); }

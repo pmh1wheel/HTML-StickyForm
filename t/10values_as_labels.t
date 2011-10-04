@@ -1,7 +1,10 @@
-# $Id: 10values_as_labels.t,v 1.1 2005/10/19 14:01:39 pmh Exp $
+#!/usr/bin/perl
 
-use Test::More tests => 8;
+use Test::More tests => 9;
+use Test::NoWarnings;
+use blib;
 use strict;
+use warnings;
 
 BEGIN{ use_ok('HTML::StickyForm'); }
 

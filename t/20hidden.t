@@ -1,8 +1,11 @@
-# $Id: 20hidden.t,v 1.2 2011/10/04 19:58:19 pmh Exp $
+#!/usr/bin/perl
 
-use Test::More no_plan;
-use Test::XML;
+use Test::More tests => 20;
+use Test::NoWarnings;
+use Test::XML::Simple;
+use blib;
 use strict;
+use warnings;
 
 use CGI;
 my $Form;
@@ -32,13 +35,13 @@ for(
   my($args,$name,$expect_empty,$expect_full)=@$_;
 
   my $out;
-  is_xml($out=$empty->hidden($args),$expect_empty,"$name (empty, ref)")
+  xml_is_deeply($out=$empty->hidden($args),'/',$expect_empty,"$name (empty, ref)")
     or diag $out;
-  is_xml($out=$empty->hidden(%$args),$expect_empty,"$name (empty, flat)")
+  xml_is_deeply($out=$empty->hidden(%$args),'/',$expect_empty,"$name (empty, flat)")
     or diag $out;
-  is_xml($out=$full->hidden($args),$expect_full,"$name (full, ref)")
+  xml_is_deeply($out=$full->hidden($args),'/',$expect_full,"$name (full, ref)")
     or diag $out;
-  is_xml($out=$full->hidden(%$args),$expect_full,"$name (full, flat)")
+  xml_is_deeply($out=$full->hidden(%$args),'/',$expect_full,"$name (full, flat)")
     or diag $out;
 }
 

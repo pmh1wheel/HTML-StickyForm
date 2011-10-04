@@ -1,8 +1,10 @@
-# $Id: 10_args.t,v 1.1 2011/10/04 19:58:19 pmh Exp $
+#!/usr/bin/perl
 
-
-use Test::More tests => 10;
+use Test::More tests => 11;
+use Test::NoWarnings;
+use blib;
 use strict;
+use warnings;
 
 BEGIN { use_ok('HTML::StickyForm'); }
 ok(*_args=\&HTML::StickyForm::_args,'"import" sub');
