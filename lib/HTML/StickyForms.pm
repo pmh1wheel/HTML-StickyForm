@@ -6,9 +6,9 @@
 #   Author: Peter Haworth
 #   Date created: 06/06/2000
 #
-#   $Id: StickyForms.pm,v 1.3 2005/10/19 16:24:20 pmh Exp $
+#   $Id: StickyForms.pm,v 1.4 2011/10/04 19:58:19 pmh Exp $
 #
-#   Copyright Peter Haworth 2001
+#   Copyright Peter Haworth 2001-2011
 #   You may use and distribute this module according to the same terms
 #   that Perl is distributed under.
 #
@@ -21,7 +21,7 @@ use vars qw(
 );
 
 # Use the same version as HTML::StickyForm
-$VERSION=0.07;
+$VERSION=0.07_01;
 
 
 ################################################################################

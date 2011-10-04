@@ -1,4 +1,4 @@
-# $Id: StickyForm.pm,v 1.3 2005/10/19 15:44:21 pmh Exp $
+# $Id: StickyForm.pm,v 1.4 2011/10/04 19:58:19 pmh Exp $
 
 =head1 NAME
 
@@ -75,7 +75,7 @@ use vars qw(
   $VERSION
 );
 
-$VERSION=0.07;
+$VERSION=0.07_01;
 
 =head1 CLASS METHODS
 
@@ -284,11 +284,11 @@ C<method>: Defaults to C<GET>
 =cut
 
 sub form_start{
-  my($self,%args)=@_;
-  $args{method}='GET' unless exists $args{method};
+  my($self,$args)=_args(@_);
+  $args->{method}='GET' unless exists $args->{method};
 
   my $field='<form';
-  while(my($name,$val)=each %args){
+  while(my($name,$val)=each %$args){
     _escape($name);
     _escape($val);
     $field.=qq( $name="$val");
@@ -305,8 +305,9 @@ As form_start(), but the C<enctype> argument defaults to C<multipart/form-data>.
 =cut
 
 sub form_start_multipart{
-  my $self=shift;
-  $self->form_start(enctype => 'mutipart/form-data',@_);
+  my($self,$args)=_args(@_);
+  $args->{enctype}||='mutipart/form-data';
+  $self->form_start($args);
 }
 
 =item form_end()
@@ -338,15 +339,15 @@ A C<default> attribute is never created.
 =cut
 
 sub text{
-  my($self,%args)=@_;
-  my $type=delete $args{type} || 'text';
-  my $name=delete $args{name};
+  my($self,$args)=_args(@_);
+  my $type=delete $args->{type} || 'text';
+  my $name=delete $args->{name};
   my $value;
-  if(exists $args{value}){
-    $value=delete $args{value};
-    delete $args{default};
+  if(exists $args->{value}){
+    $value=delete $args->{value};
+    delete $args->{default};
   }else{
-    $value=delete $args{default};
+    $value=delete $args->{default};
     $value=$self->{req}->param($name) if $self->{params};
   }
 
@@ -355,7 +356,7 @@ sub text{
   _escape($value);
 
   my $field=qq(<input type="$type" name="$name" value="$value");
-  while(my($key,$val)=each %args){
+  while(my($key,$val)=each %$args){
     _escape($key);
     _escape($val);
     $field.=qq( $key="$val");
@@ -371,8 +372,9 @@ As text(), but produces an input element of type C<hidden>.
 =cut
 
 sub hidden{
-  my $self=shift;
-  $self->text(@_,type => 'hidden');
+  my($self,$args)=_args(@_);
+  $args->{type}||='hidden';
+  $self->text($args);
 }
 
 =item password(PAIRLIST)
@@ -382,8 +384,9 @@ As text(), but produces an input element of type C<password>.
 =cut
 
 sub password{
-  my $self=shift;
-  $self->text(@_,type => 'password');
+  my($self,$args)=_args(@_);
+  $args->{type}||='password';
+  $self->text($args);
 }
 
 =item textarea(PAIRLIST)
@@ -404,14 +407,14 @@ A C<default> attribute is never created.
 =cut
 
 sub textarea{
-  my($self,%args)=@_;
-  my $name=delete $args{name};
+  my($self,$args)=_args(@_);
+  my $name=delete $args->{name};
   my $value;
-  if(exists $args{value}){
-    $value=delete $args{value};
-    delete $args{default};
+  if(exists $args->{value}){
+    $value=delete $args->{value};
+    delete $args->{default};
   }else{
-    $value=delete $args{default};
+    $value=delete $args->{default};
     $value=$self->{req}->param($name) if $self->{params};
   }
 
@@ -419,7 +422,7 @@ sub textarea{
   _escape($value);
 
   my $field=qq(<textarea name="$name");
-  while(my($key,$val)=each %args){
+  while(my($key,$val)=each %$args){
     _escape($key);
     _escape($val);
     $field.=qq( $key="$val");
@@ -450,15 +453,15 @@ true for the C<checked> attribute to be created.
 =cut
 
 sub checkbox{
-  my($self,%args)=@_;
-  my $name=delete $args{name};
-  my $value=delete $args{value};
+  my($self,$args)=_args(@_);
+  my $name=delete $args->{name};
+  my $value=delete $args->{value};
   my $checked;
-  if(exists $args{checked}){
-    $checked=delete $args{checked};
-    delete $args{default};
+  if(exists $args->{checked}){
+    $checked=delete $args->{checked};
+    delete $args->{default};
   }else{
-    $checked=delete $args{default};
+    $checked=delete $args->{default};
     $value='' unless defined($value);
     $checked=grep $_ eq $value,$self->{req}->param($name) if $self->{params};
   }
@@ -468,7 +471,7 @@ sub checkbox{
 
   my $field=qq(<input type="checkbox" name="$name" value="$value");
   $field.=' checked="checked"' if $checked;
-  while(my($key,$val)=each %args){
+  while(my($key,$val)=each %$args){
     _escape($key);
     _escape($val);
     $field.=qq( $key="$val");
@@ -516,38 +519,38 @@ C<values_as_labels> attribute.
 =cut
 
 sub checkbox_group{
-  my($self,%args)=@_;
-  my $type=delete $args{type} || 'checkbox';
-  my $name=delete $args{name};
-  my $labels=delete $args{labels} || {};
+  my($self,$args)=_args(@_);
+  my $type=delete $args->{type} || 'checkbox';
+  my $name=delete $args->{name};
+  my $labels=delete $args->{labels} || {};
   my $escape_labels=1;
-  $escape_labels=delete $args{escape_labels} if exists $args{escape_labels};
-  my $values=delete $args{values};
+  $escape_labels=delete $args->{escape_labels} if exists $args->{escape_labels};
+  my $values=delete $args->{values};
   $values||=[keys %$labels];
   my $checked=[];
-  if(exists $args{checked}){
-    $checked=delete $args{checked};
+  if(exists $args->{checked}){
+    $checked=delete $args->{checked};
     $checked=[$checked] if ref($checked) ne 'ARRAY';
-    delete $args{default};
+    delete $args->{default};
   }else{
-    if(exists $args{default}){
-      $checked=delete $args{default};
+    if(exists $args->{default}){
+      $checked=delete $args->{default};
       $checked=[$checked] if ref($checked) ne 'ARRAY';
     }
     $checked=[$self->{req}->param($name)] if $self->{params};
   }
   my %checked=map +($_,1),@$checked;
-  my $br=delete $args{linebreak} ? "<br$self->{well_formed}>" : '';
+  my $br=delete $args->{linebreak} ? "<br$self->{well_formed}>" : '';
   my $v_as_l=$self->{values_as_labels};
-  if(exists $args{values_as_labels}){
-    $v_as_l=delete $args{values_as_labels};
+  if(exists $args->{values_as_labels}){
+    $v_as_l=delete $args->{values_as_labels};
   }
 
   _escape($type);
   _escape($name);
 
   my $field=qq(<input type="$type" name="$name");
-  while(my($key,$val)=each %args){
+  while(my($key,$val)=each %$args){
     _escape($key);
     _escape($val);
     $field.=qq( $key="$val");
@@ -582,12 +585,12 @@ As checkbox_group(), but setting C<type> to C<radio>.
 =cut
 
 sub radio_group{
-  my $self=shift;
-
-  $self->checkbox_group(@_,type => 'radio');
+  my($self,$args)=_args(@_);
+  $args->{type}||='radio';
+  $self->checkbox_group($args);
 }
 
-=item select(%args)
+=item select(PAIRLIST)
 
 Generates a C<E<lt>selectE<gt>> element. All arguments are used directly to
 generate attributes in the C<E<lt>selectE<gt>> element, except for those listed below. Unless otherwise stated, all names and values are HTML-escaped.
@@ -618,30 +621,30 @@ This is of little value, since it's the default behaviour of HTML in any case.
 =cut
 
 sub select{
-  my($self,%args)=@_;
-  my $name=delete $args{name};
-  my $multiple=delete $args{multiple};
-  my $labels=delete $args{labels} || {};
-  my $values=delete $args{values} || [keys %$labels];
+  my($self,$args)=_args(@_);
+  my $name=delete $args->{name};
+  my $multiple=delete $args->{multiple};
+  my $labels=delete $args->{labels} || {};
+  my $values=delete $args->{values} || [keys %$labels];
   my $selected;
-  if(exists $args{selected}){
-    $selected=delete $args{selected};
-    delete $args{default};
+  if(exists $args->{selected}){
+    $selected=delete $args->{selected};
+    delete $args->{default};
   }else{
-    $selected=delete $args{default};
+    $selected=delete $args->{default};
     $selected=[$self->{req}->param($name)] if $self->{params};
   }
   if(!defined $selected){ $selected=[]; }
   elsif(ref($selected) ne 'ARRAY'){ $selected=[$selected]; }
   my %selected=map +($_,1),@$selected;
   my $v_as_l=$self->{values_as_labels};
-  if(exists $args{values_as_labels}){
-    $v_as_l=delete $args{values_as_labels};
+  if(exists $args->{values_as_labels}){
+    $v_as_l=delete $args->{values_as_labels};
   }
 
   _escape($name);
   my $field=qq(<select name="$name");
-  while(my($key,$val)=each %args){
+  while(my($key,$val)=each %$args){
     _escape($key);
     _escape($val);
     $field.=qq( $key="$val");
@@ -678,11 +681,11 @@ fields are not sticky.
 =cut
 
 sub submit{
-  my($self,%args)=@_;
-  $args{type}='submit' unless exists $args{type};
+  my($self,$args)=_args(@_);
+  $args->{type}='submit' unless exists $args->{type};
 
   my $field='<input';
-  while(my($key,$val)=each %args){
+  while(my($key,$val)=each %$args){
     _escape($key);
     _escape($val);
     $field.=qq( $key="$val");
@@ -719,6 +722,21 @@ sub _escape($){
   }else{
     $_[0]='';
   }
+}
+
+=item _args(@_)
+
+Work out which of the two argument passing conventions is being used, and
+return ($self,\%args). This essentially converts the public unrolled
+PAIRLIST arguments into a single hashref, as used by the internal
+interfaces.
+
+=cut
+
+sub _args{
+  my $self=shift;
+  my $args=ref($_[0]) ? {%{$_[0]}} : {@_};
+  ($self,$args);
 }
 
 

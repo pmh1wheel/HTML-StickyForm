@@ -1,4 +1,4 @@
-# $Id: 20password.t,v 1.1 2005/10/19 14:02:43 pmh Exp $
+# $Id: 20password.t,v 1.2 2011/10/04 19:58:19 pmh Exp $
 
 use Test::More no_plan;
 use Test::XML;
@@ -32,9 +32,13 @@ for(
   my($args,$name,$expect_empty,$expect_full)=@$_;
 
   my $out;
-  is_xml($out=$empty->password(%$args),$expect_empty,"$name (empty)")
+  is_xml($out=$empty->password($args),$expect_empty,"$name (empty, ref)")
     or diag $out;
-  is_xml($out=$full->password(%$args),$expect_full,"$name (full)")
+  is_xml($out=$empty->password(%$args),$expect_empty,"$name (empty, flat)")
+    or diag $out;
+  is_xml($out=$full->password($args),$expect_full,"$name (full, ref)")
+    or diag $out;
+  is_xml($out=$full->password(%$args),$expect_full,"$name (full, flat)")
     or diag $out;
 }
 

@@ -1,9 +1,8 @@
-# $Id: MANIFEST,v 1.4 2005/10/19 16:19:50 pmh Exp $
+# $Id: MANIFEST,v 1.5 2011/10/04 19:58:19 pmh Exp $
 
 Changes
 MANIFEST
 MANIFEST.SKIP
-META.yml                                 Module meta-data (added by MakeMaker)
 Makefile.PL
 README
 Todo
@@ -15,6 +14,7 @@ t/00requesthash.t
 t/00use.t
 t/00use_old.t
 t/10_escape.t
+t/10_args.t
 t/10sticky.t
 t/10values_as_labels.t
 t/10well_formed.t

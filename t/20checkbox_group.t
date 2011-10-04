@@ -1,4 +1,4 @@
-# $Id: 20checkbox_group.t,v 1.2 2005/10/19 15:44:51 pmh Exp $
+# $Id: 20checkbox_group.t,v 1.3 2011/10/04 19:58:19 pmh Exp $
 
 use Test::More no_plan;
 use Test::XML;
@@ -126,11 +126,17 @@ for(
 ){
   my($args,$name,$expect_empty,$expect_full)=@$_;
 
-  my $out='<f>'.$empty->checkbox_group(%$args).'</f>';
-  is_xml($out,$expect_empty,"$name (empty)")
+  my $out='<f>'.$empty->checkbox_group($args).'</f>';
+  is_xml($out,$expect_empty,"$name (empty, ref)")
     or diag($expect_empty),diag($out);
+  $out='<f>'.$empty->checkbox_group(%$args).'</f>';
+  is_xml($out,$expect_empty,"$name (empty, flat)")
+    or diag($expect_empty),diag($out);
+  $out='<f>'.$full->checkbox_group($args).'</f>';
+  is_xml($out,$expect_full,"$name (full, ref)")
+    or diag($expect_full),diag($out);
   $out='<f>'.$full->checkbox_group(%$args).'</f>';
-  is_xml($out,$expect_full,"$name (full)")
+  is_xml($out,$expect_full,"$name (full, flat)")
     or diag($expect_full),diag($out);
 }
 

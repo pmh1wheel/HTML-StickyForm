@@ -1,4 +1,4 @@
-# $Id: 20form.t,v 1.1 2005/10/19 14:02:42 pmh Exp $
+# $Id: 20form.t,v 1.2 2011/10/04 19:58:19 pmh Exp $
 
 use Test::More no_plan;
 use Test::XML;
@@ -20,7 +20,10 @@ for(
   my($args,$expect,$name)=@$_;
   my $meth=delete $args->{MULTI} ? 'form_start_multipart' : 'form_start';
 
-  my $out=$form->$meth(%$args)."X$end";
-  is_xml($out,$expect,$name)
+  my $out=$form->$meth($args)."X$end";
+  is_xml($out,$expect,"$name, ref")
+    or diag($out);
+  $out=$form->$meth(%$args)."X$end";
+  is_xml($out,$expect,"$name, flat")
     or diag($out);
 }

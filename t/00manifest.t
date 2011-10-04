@@ -1,4 +1,4 @@
-# $Id: 00manifest.t,v 1.1 2005/10/19 13:56:14 pmh Exp $
+# $Id: 00manifest.t,v 1.2 2011/10/04 19:58:19 pmh Exp $
 
 use Test::More;
 use File::Find;
@@ -9,9 +9,10 @@ BEGIN{
   # Change to the dist root directory
   for(1..3){
     -e 'MANIFEST'
-      or chdir '..'
-      or BAIL_OUT("Can't find the MANIFEST file");
+      or chdir '..';
   }
+  -e 'MANIFEST'
+    or BAIL_OUT("Can't find the MANIFEST file");
 
   -e '.cvsignore'
     or plan skip_all => 'Only useful on dev system';
