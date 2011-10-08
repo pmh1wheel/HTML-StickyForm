@@ -2,8 +2,7 @@
 
 =head1 NAME
 
-HTML::StickyForm - Lightweight general-purpose HTML form generation,
-with sticky values
+HTML::StickyForm - Lightweight general-purpose HTML form generation, with sticky values
 
 =head1 SYNOPSIS
 
