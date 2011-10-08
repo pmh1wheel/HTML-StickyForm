@@ -14,7 +14,7 @@ WriteMakefile(
   PREREQ_PM => {
     'Test::More' => 0,
     'Test::NoWarnings' => 0,
-    'Test::Simple::XML' => 0,
+    'Test::XML::Simple' => 0,
   },
   $ExtUtils::MakeMaker::VERSION >= 5.4301 ? (
     ABSTRACT => 'Generic mod_perl/CGI HTML form generation',

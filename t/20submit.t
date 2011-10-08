@@ -1,8 +1,12 @@
-# $Id: 20submit.t,v 1.2 2011/10/04 19:58:19 pmh Exp $
+#!/usr/bin/perl
 
-use Test::More no_plan;
-use Test::XML;
+use blib;
+use lib 't/lib';
 use strict;
+use warnings;
+use Test::More tests => 28;
+use Test::NoWarnings;
+use Test::XML::Canon;
 
 use CGI;
 my $Form;
@@ -17,8 +21,8 @@ for(
     '<input type="submit" />',
   ],
   [{value=>'Hit Me!'},'value',
-    '<input type="submit" value="Hit Me!" />',
-    '<input type="submit" value="Hit Me!" />',
+    '<input value="Hit Me!" type="submit" />',
+    '<input value="Hit Me!" type="submit" />',
   ],
   [{name=>'fred'},'fred/empty',
     '<input type="submit" name="fred" />',
@@ -29,24 +33,24 @@ for(
     '<input type="submit" name="fred" value="Hit Me!"/>',
   ],
   [{name=>'fr&d', value=>'""',},'escape',
-    '<input type="submit" name="fr&#38;d" value="&#34;&#34;"/>',
-    '<input type="submit" name="fr&#38;d" value="&#34;&#34;"/>',
+    '<input type="submit" name="fr&#38;d" value="&#34;&#34;" />',
+    '<input type="submit" name="fr&#38;d" value="&#34;&#34;" />',
   ],
   [{random=>'wiffle nuts'},'random',
-    '<input type="submit" random="wiffle nuts"/>',
-    '<input type="submit" random="wiffle nuts"/>',
+    '<input type="submit" random="wiffle nuts" />',
+    '<input type="submit" random="wiffle nuts" />',
   ],
 ){
   my($args,$name,$expect_empty,$expect_full)=@$_;
 
   my $out;
-  is_xml($out=$empty->submit($args),$expect_empty,"$name (empty, ref)")
+  is_xml_canon($out=$empty->submit($args),$expect_empty,"$name (empty, ref)")
     or diag $out;
-  is_xml($out=$empty->submit(%$args),$expect_empty,"$name (empty, flat)")
+  is_xml_canon($out=$empty->submit(%$args),$expect_empty,"$name (empty, flat)")
     or diag $out;
-  is_xml($out=$full->submit($args),$expect_full,"$name (full, ref)")
+  is_xml_canon($out=$full->submit($args),$expect_full,"$name (full, ref)")
     or diag $out;
-  is_xml($out=$full->submit(%$args),$expect_full,"$name (full, flat)")
+  is_xml_canon($out=$full->submit(%$args),$expect_full,"$name (full, flat)")
     or diag $out;
 }
 

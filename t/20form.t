@@ -1,11 +1,12 @@
 #!/usr/bin/perl
 
-use Test::More tests => 12;
-use Test::NoWarnings;
-use Test::XML::Simple;
 use blib;
+use lib 't/lib';
 use strict;
 use warnings;
+use Test::More tests => 12;
+use Test::NoWarnings;
+use Test::XML::Canon;
 
 my $Form;
 BEGIN{ use_ok($Form='HTML::StickyForm'); }
@@ -24,9 +25,9 @@ for(
   my $meth=delete $args->{MULTI} ? 'form_start_multipart' : 'form_start';
 
   my $out=$form->$meth($args)."X$end";
-  xml_is_deeply($out,'/',$expect,"$name, ref")
+  is_xml_canon($out,$expect,"$name, ref")
     or diag($out);
   $out=$form->$meth(%$args)."X$end";
-  xml_is_deeply($out,'/',$expect,"$name, flat")
+  is_xml_canon($out,$expect,"$name, flat")
     or diag($out);
 }

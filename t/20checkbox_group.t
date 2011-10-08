@@ -1,11 +1,12 @@
 #!/usr/bin/perl
 
-use Test::More tests => 92;
-use Test::NoWarnings;
-use Test::XML::Simple;
 use blib;
+use lib 't/lib';
 use strict;
 use warnings;
+use Test::More tests => 92;
+use Test::NoWarnings;
+use Test::XML::Canon;
 
 my $Form;
 BEGIN{ use_ok($Form='HTML::StickyForm'); }
@@ -130,16 +131,16 @@ for(
   my($args,$name,$expect_empty,$expect_full)=@$_;
 
   my $out='<f>'.$empty->checkbox_group($args).'</f>';
-  xml_is_deeply($out,'/',$expect_empty,"$name (empty, ref)")
+  is_xml_canon($out,$expect_empty,"$name (empty, ref)")
     or diag("expect: $expect_empty"),diag("got: $out");
   $out='<f>'.$empty->checkbox_group(%$args).'</f>';
-  xml_is_deeply($out,'/',$expect_empty,"$name (empty, flat)")
+  is_xml_canon($out,$expect_empty,"$name (empty, flat)")
     or diag("expect: $expect_empty"),diag("got: $out");
   $out='<f>'.$full->checkbox_group($args).'</f>';
-  xml_is_deeply($out,'/',$expect_full,"$name (full, ref)")
+  is_xml_canon($out,$expect_full,"$name (full, ref)")
     or diag("expect: $expect_full"),diag("got: $out");
   $out='<f>'.$full->checkbox_group(%$args).'</f>';
-  xml_is_deeply($out,'/',$expect_full,"$name (full, flat)")
+  is_xml_canon($out,$expect_full,"$name (full, flat)")
     or diag("expect: $expect_full"),diag("got: $out");
 }
 

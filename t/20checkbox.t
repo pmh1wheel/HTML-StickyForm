@@ -1,11 +1,12 @@
 #!/usr/bin/perl
 
-use Test::More tests => 64;
-use Test::NoWarnings;
-use Test::XML::Simple;
 use blib;
+use lib 't/lib';
 use strict;
 use warnings;
+use Test::More tests => 64;
+use Test::NoWarnings;
+use Test::XML::Canon;
 
 my $Form;
 BEGIN{ use_ok($Form='HTML::StickyForm'); }
@@ -80,13 +81,13 @@ for(
   my($args,$name,$expect_empty,$expect_full)=@$_;
 
   my $out;
-  xml_is_deeply($out=$empty->checkbox($args),'/',$expect_empty,"$name (empty, ref)")
+  is_xml_canon($out=$empty->checkbox($args),$expect_empty,"$name (empty, ref)")
     or diag $out;
-  xml_is_deeply($out=$empty->checkbox(%$args),'/',$expect_empty,"$name (empty, flat))")
+  is_xml_canon($out=$empty->checkbox(%$args),$expect_empty,"$name (empty, flat))")
     or diag $out;
-  xml_is_deeply($out=$full->checkbox($args),'/',$expect_full,"$name (full, ref)")
+  is_xml_canon($out=$full->checkbox($args),$expect_full,"$name (full, ref)")
     or diag $out;
-  xml_is_deeply($out=$full->checkbox(%$args),'/',$expect_full,"$name (full, flat)")
+  is_xml_canon($out=$full->checkbox(%$args),$expect_full,"$name (full, flat)")
     or diag $out;
 }
 

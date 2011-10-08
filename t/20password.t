@@ -1,8 +1,12 @@
-# $Id: 20password.t,v 1.2 2011/10/04 19:58:19 pmh Exp $
+#!/usr/bin/perl
 
-use Test::More no_plan;
-use Test::XML;
+use blib;
+use lib 't/lib';
 use strict;
+use warnings;
+use Test::More tests => 20;
+use Test::NoWarnings;
+use Test::XML::Canon;
 
 use CGI;
 my $Form;
@@ -32,13 +36,13 @@ for(
   my($args,$name,$expect_empty,$expect_full)=@$_;
 
   my $out;
-  is_xml($out=$empty->password($args),$expect_empty,"$name (empty, ref)")
+  is_xml_canon($out=$empty->password($args),$expect_empty,"$name (empty, ref)")
     or diag $out;
-  is_xml($out=$empty->password(%$args),$expect_empty,"$name (empty, flat)")
+  is_xml_canon($out=$empty->password(%$args),$expect_empty,"$name (empty, flat)")
     or diag $out;
-  is_xml($out=$full->password($args),$expect_full,"$name (full, ref)")
+  is_xml_canon($out=$full->password($args),$expect_full,"$name (full, ref)")
     or diag $out;
-  is_xml($out=$full->password(%$args),$expect_full,"$name (full, flat)")
+  is_xml_canon($out=$full->password(%$args),$expect_full,"$name (full, flat)")
     or diag $out;
 }
 

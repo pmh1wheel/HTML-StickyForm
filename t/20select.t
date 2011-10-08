@@ -1,8 +1,12 @@
-# $Id: 20select.t,v 1.3 2011/10/04 19:58:19 pmh Exp $
+#!/usr/bin/perl
 
-use Test::More no_plan;
-use Test::XML;
+use blib;
+use lib 't/lib';
 use strict;
+use warnings;
+use Test::More tests => 96;
+use Test::NoWarnings;
+use Test::XML::Canon;
 
 my $Form;
 BEGIN{ use_ok($Form='HTML::StickyForm'); }
@@ -73,48 +77,48 @@ for(
   ],
 
   [{name => 'abc',values => [456,789]},'abc/456,789',
-    '<select name="abc"><option value="456"/>
-	<option value="789"/></select>',
-    '<select name="abc"><option value="456" selected="selected"/>
-        <option value="789" selected="selected"/></select>',
+    '<select name="abc"><option value="456"/>'.
+	'<option value="789"/></select>',
+    '<select name="abc"><option value="456" selected="selected"/>'.
+        '<option value="789" selected="selected"/></select>',
   ],
   [{name => 'abc',values => [456,789],selected=>456},'abc/456,789/selected=456',
-    '<select name="abc"><option value="456" selected="selected"/>
-	<option value="789"/></select>',
-    '<select name="abc"><option value="456" selected="selected"/>
-        <option value="789"/></select>',
+    '<select name="abc"><option value="456" selected="selected"/>'.
+	'<option value="789"/></select>',
+    '<select name="abc"><option value="456" selected="selected"/>'.
+        '<option value="789"/></select>',
   ],
   [{name => 'abc',values => [456,789],default=>456},'abc/456,789/default=456',
-    '<select name="abc"><option value="456" selected="selected"/>
-	<option value="789"/></select>',
-    '<select name="abc"><option value="456" selected="selected"/>
-        <option value="789" selected="selected"/></select>',
+    '<select name="abc"><option value="456" selected="selected"/>'.
+	'<option value="789"/></select>',
+    '<select name="abc"><option value="456" selected="selected"/>'.
+        '<option value="789" selected="selected"/></select>',
   ],
   [{name => 'abc',values => [456,789],selected=>[456,789]},'abc/456,789/selected',
-    '<select name="abc"><option value="456" selected="selected"/>
-	<option value="789" selected="selected"/></select>',
-    '<select name="abc"><option value="456" selected="selected"/>
-        <option value="789" selected="selected"/></select>',
+    '<select name="abc"><option value="456" selected="selected"/>'.
+	'<option value="789" selected="selected"/></select>',
+    '<select name="abc"><option value="456" selected="selected"/>'.
+        '<option value="789" selected="selected"/></select>',
   ],
 
   [{name=>'abc',values=>[345,678],values_as_labels=>1},'abc/345,678/val',
-    '<select name="abc"><option value="345">345</option>
-        <option value="678">678</option></select>',
-    '<select name="abc"><option value="345">345</option>
-        <option value="678">678</option></select>',
+    '<select name="abc"><option value="345">345</option>'.
+        '<option value="678">678</option></select>',
+    '<select name="abc"><option value="345">345</option>'.
+        '<option value="678">678</option></select>',
   ],
   [{name=>'abc',values=>[345,678],labels=>{345=>'X',678=>'Y'}},'abc/345,678/XY',
-    '<select name="abc"><option value="345">X</option>
-        <option value="678">Y</option></select>',
-    '<select name="abc"><option value="345">X</option>
-        <option value="678">Y</option></select>',
+    '<select name="abc"><option value="345">X</option>'.
+        '<option value="678">Y</option></select>',
+    '<select name="abc"><option value="345">X</option>'.
+        '<option value="678">Y</option></select>',
   ],
   [{name=>'abc',values=>[345,678],labels=>{345=>'X'},values_as_labels=>1},
     'abc/345,678/X/val',
-    '<select name="abc"><option value="345">X</option>
-        <option value="678">678</option></select>',
-    '<select name="abc"><option value="345">X</option>
-        <option value="678">678</option></select>',
+    '<select name="abc"><option value="345">X</option>'.
+        '<option value="678">678</option></select>',
+    '<select name="abc"><option value="345">X</option>'.
+        '<option value="678">678</option></select>',
   ],
 
   [{name=>'abc',labels=>{456,'X'}},'abc/labels',
@@ -129,16 +133,16 @@ for(
   my($args,$name,$expect_empty,$expect_full)=@$_;
 
   my $out=$empty->select($args);
-  is_xml($out,$expect_empty,"$name (empty, ref)")
+  is_xml_canon($out,$expect_empty,"$name (empty, ref)")
     or diag($expect_empty),diag($out);
   $out=$empty->select(%$args);
-  is_xml($out,$expect_empty,"$name (empty, flat)")
+  is_xml_canon($out,$expect_empty,"$name (empty, flat)")
     or diag($expect_empty),diag($out);
   $out=$full->select($args);
-  is_xml($out,$expect_full,"$name (full, ref)")
+  is_xml_canon($out,$expect_full,"$name (full, ref)")
     or diag($expect_full),diag($out);
   $out=$full->select(%$args);
-  is_xml($out,$expect_full,"$name (full, flat)")
+  is_xml_canon($out,$expect_full,"$name (full, flat)")
     or diag($expect_full),diag($out);
 }
 

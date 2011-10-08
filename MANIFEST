@@ -29,3 +29,4 @@ t/20select.t
 t/20submit.t
 t/20text.t
 t/20textarea.t
+t/lib/Test/XML/Canon.pm

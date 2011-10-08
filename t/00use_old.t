@@ -1,9 +1,10 @@
 #!/usr/bin/perl
 
+use blib;
+use strict;
+use warnings;
 use Test::More tests => 4;
 use Test::NoWarnings;
-use blib;
-use warnings;
 
 BEGIN{ use_ok('HTML::StickyForms'); }
 BEGIN{ use_ok('HTML::StickyForm'); }

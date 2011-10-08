@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 
-use Test::More;
-use Test::NoWarnings;
 use strict;
 use warnings;
+use Test::More;
+use Test::NoWarnings;
 
 # Make sure we're on the developer's system
 BEGIN{

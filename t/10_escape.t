@@ -1,11 +1,11 @@
 #!/usr/bin/perl
 
 
-use Test::More tests => 10;
-use Test::NoWarnings;
 use blib;
 use strict;
 use warnings;
+use Test::More tests => 10;
+use Test::NoWarnings;
 
 BEGIN { use_ok('HTML::StickyForm'); }
 ok(*_escape=\&HTML::StickyForm::_escape,'"import" sub');

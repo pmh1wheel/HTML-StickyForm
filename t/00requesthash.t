@@ -1,10 +1,10 @@
 #!/usr/bin/perl
 
-use Test::More tests => 26;
-use Test::NoWarnings;
 use blib;
 use strict;
 use warnings;
+use Test::More tests => 26;
+use Test::NoWarnings;
 
 my $Hash;
 BEGIN{ use_ok($Hash='HTML::StickyForm::RequestHash'); }
