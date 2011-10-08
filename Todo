@@ -1,5 +1,4 @@
-# $Id: Todo,v 1.3 2005/10/19 14:33:18 pmh Exp $
 
 Check code coverage of tests
 
-per-element attributes for *_group(), select()
+per-element attributes for select()

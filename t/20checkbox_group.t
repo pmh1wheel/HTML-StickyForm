@@ -4,7 +4,7 @@ use blib;
 use lib 't/lib';
 use strict;
 use warnings;
-use Test::More tests => 92;
+use Test::More tests => 100;
 use Test::NoWarnings;
 use Test::XML::Canon;
 
@@ -124,6 +124,19 @@ for(
   [{name=>'abc',labels=>{345,'<b>X</b>'},escape_labels=>0},'abc/escape=0',
     '<f><input type="checkbox" name="abc" value="345"/><b>X</b></f>',
     '<f><input type="checkbox" name="abc" value="345"/><b>X</b></f>',
+  ],
+
+  [{name=>'abc', values=>['foo','bar'], random=>'qux'},'random/single',
+    '<f><input type="checkbox" name="abc" value="foo" random="qux"/>'.
+      '<input type="checkbox" name="abc" value="bar" random="qux"/></f>',
+    '<f><input type="checkbox" name="abc" value="foo" random="qux"/>'.
+      '<input type="checkbox" name="abc" value="bar" random="qux"/></f>',
+  ],
+  [{name=>'abc', values=>['foo','bar'], random=>{foo=>'oof', bar=>'rab'}},'random/multi',
+    '<f><input type="checkbox" name="abc" value="foo" random="oof"/>'.
+      '<input type="checkbox" name="abc" value="bar" random="rab"/></f>',
+    '<f><input type="checkbox" name="abc" value="foo" random="oof"/>'.
+      '<input type="checkbox" name="abc" value="bar" random="rab"/></f>',
   ],
 
   # XXX Check for list context

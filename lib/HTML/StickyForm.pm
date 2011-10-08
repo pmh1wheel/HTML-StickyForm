@@ -1,4 +1,3 @@
-# $Id: StickyForm.pm,v 1.4 2011/10/04 19:58:19 pmh Exp $
 
 =head1 NAME
 
@@ -27,19 +26,22 @@ HTML::StickyForm - Lightweight general-purpose HTML form generation, with sticky
      "<br />Text area:",
      $f->textarea(name => 'field2', cols => 60, rows => 5, default => 'stuff'),
 
+     "<br />Single radio button:",
+     $f->radio(name => 'field3', value => 'xyz', checked => 1),
+
      "<br />Radio buttons:",
-     $f->radio_group(name => 'field3', values => [1,2,3],
+     $f->radio_group(name => 'field4', values => [1,2,3],
        labels => { 1=>'one', 2=>'two', 3=>'three' }, default => 2),
 
      "<br />Single checkbox:",
-     $f->checkbox(name => 'field4', value => 'xyz', checked => 1),
+     $f->checkbox(name => 'field5', value => 'xyz', checked => 1),
 
      "<br />Checkbox group:",
-     $f->checkbox_group(name => 'field5', values => [4,5,6],
+     $f->checkbox_group(name => 'field6', values => [4,5,6],
        labels => { 4=>'four', 5=>'five', 6=>'six' }, default => [5,6]),
 
      "<br />Password field:",
-     $f->password(name => 'field6', size => 20),
+     $f->password(name => 'field7', size => 20),
 
      '<br />",
      $f->submit(value => ' Hit me! '),
@@ -70,11 +72,7 @@ consistent, and to keep the code size down to a minimum.
 
 package HTML::StickyForm;
 use strict;
-use vars qw(
-  $VERSION
-);
-
-$VERSION=0.07_01;
+use warnings;
 
 =head1 CLASS METHODS
 
@@ -283,7 +281,7 @@ C<method>: Defaults to C<GET>
 =cut
 
 sub form_start{
-  my($self,$args)=_args(@_);
+  my($self,$args)=&_args;
   $args->{method}='GET' unless exists $args->{method};
 
   my $field='<form';
@@ -304,7 +302,7 @@ As form_start(), but the C<enctype> argument defaults to C<multipart/form-data>.
 =cut
 
 sub form_start_multipart{
-  my($self,$args)=_args(@_);
+  my($self,$args)=&_args;
   $args->{enctype}||='mutipart/form-data';
   $self->form_start($args);
 }
@@ -338,7 +336,7 @@ A C<default> attribute is never created.
 =cut
 
 sub text{
-  my($self,$args)=_args(@_);
+  my($self,$args)=&_args;
   my $type=delete $args->{type} || 'text';
   my $name=delete $args->{name};
   my $value;
@@ -371,7 +369,7 @@ As text(), but produces an input element of type C<hidden>.
 =cut
 
 sub hidden{
-  my($self,$args)=_args(@_);
+  my($self,$args)=&_args;
   $args->{type}||='hidden';
   $self->text($args);
 }
@@ -383,7 +381,7 @@ As text(), but produces an input element of type C<password>.
 =cut
 
 sub password{
-  my($self,$args)=_args(@_);
+  my($self,$args)=&_args;
   $args->{type}||='password';
   $self->text($args);
 }
@@ -406,7 +404,7 @@ A C<default> attribute is never created.
 =cut
 
 sub textarea{
-  my($self,$args)=_args(@_);
+  my($self,$args)=&_args;
   my $name=delete $args->{name};
   my $value;
   if(exists $args->{value}){
@@ -452,7 +450,8 @@ true for the C<checked> attribute to be created.
 =cut
 
 sub checkbox{
-  my($self,$args)=_args(@_);
+  my($self,$args)=&_args;
+  my $type=delete $args->{type} || 'checkbox';
   my $name=delete $args->{name};
   my $value=delete $args->{value};
   my $checked;
@@ -468,7 +467,7 @@ sub checkbox{
   _escape($name);
   _escape($value);
 
-  my $field=qq(<input type="checkbox" name="$name" value="$value");
+  my $field=qq(<input type="$type" name="$name" value="$value");
   $field.=' checked="checked"' if $checked;
   while(my($key,$val)=each %$args){
     _escape($key);
@@ -484,8 +483,10 @@ sub checkbox{
 Generates a group of C<checkbox> type C<E<lt>inputE<gt>> elements. If called in
 list context, returns a list of elements, otherwise a single string containing
 all tags. All arguments are used directly to generate attributes in each tag,
-except for those listed below. Unless otherwise stated, all names and values
-are HTML-escaped.
+except for those listed below. Arguments with scalar values result in that
+value being used for each element, whereas hashref values result in the value
+keyed by the element's C<value> attribute being used.
+Unless otherwise stated, all names and values are HTML-escaped.
 
 C<values>: An arrayref of values.
 One element will be generated for each element, in the order supplied.
@@ -518,7 +519,7 @@ C<values_as_labels> attribute.
 =cut
 
 sub checkbox_group{
-  my($self,$args)=_args(@_);
+  my($self,$args)=&_args;
   my $type=delete $args->{type} || 'checkbox';
   my $name=delete $args->{name};
   my $labels=delete $args->{labels} || {};
@@ -538,7 +539,7 @@ sub checkbox_group{
     }
     $checked=[$self->{req}->param($name)] if $self->{params};
   }
-  my %checked=map +($_,1),@$checked;
+  my %checked=map +($_,'checked'),@$checked;
   my $br=delete $args->{linebreak} ? "<br$self->{well_formed}>" : '';
   my $v_as_l=$self->{values_as_labels};
   if(exists $args->{values_as_labels}){
@@ -549,7 +550,15 @@ sub checkbox_group{
   _escape($name);
 
   my $field=qq(<input type="$type" name="$name");
+  my %per_value=(
+    checked => \%checked,
+    value => {map +($_,$_),@$values},
+  );
   while(my($key,$val)=each %$args){
+    if($val && ref($val) eq 'HASH'){
+      $per_value{$key}=$val;
+      next;
+    }
     _escape($key);
     _escape($val);
     $field.=qq( $key="$val");
@@ -557,9 +566,14 @@ sub checkbox_group{
 
   my @checkboxes;
   for my $value(@$values){
-    _escape(my $evalue=$value);
-    my $field=qq($field value="$evalue");
-    $field.=' checked="checked"' if $checked{$value};
+    my $field=$field;
+    while(my($key,$hash)=each %per_value){
+      exists $hash->{$value}
+        or next;
+      _escape($key);
+      _escape(my $val=$hash->{$value});
+      $field.=qq( $key="$val");
+    }
     $field.="$self->{well_formed}>";
 
     if(exists $labels->{$value}){
@@ -567,6 +581,7 @@ sub checkbox_group{
       _escape($label) if $escape_labels;
       $field.=$label;
     }elsif($v_as_l){
+      _escape(my $evalue=$value);
       $field.=$evalue;
     }
     $field.=$br;
@@ -577,6 +592,18 @@ sub checkbox_group{
   return join '',@checkboxes;
 }
 
+=item radio(PAIRLIST)
+
+As radio_group(), but setting C<type> to C<radio>.
+
+=cut
+
+sub radio{
+  my($self,$args)=&_args;
+  $args->{type}||='radio';
+  $self->checkbox($args);
+}
+
 =item radio_group(PAIRLIST)
 
 As checkbox_group(), but setting C<type> to C<radio>.
@@ -584,7 +611,7 @@ As checkbox_group(), but setting C<type> to C<radio>.
 =cut
 
 sub radio_group{
-  my($self,$args)=_args(@_);
+  my($self,$args)=&_args;
   $args->{type}||='radio';
   $self->checkbox_group($args);
 }
@@ -752,7 +779,7 @@ sub _args{
 
 =head1 AUTHOR
 
-Copyright (C) Institute of Physics Publishing 2000-2005
+Copyright (C) Institute of Physics Publishing 2000-2011
 
 	Peter Haworth <pmh@edison.ioppublishing.com>
 
