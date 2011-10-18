@@ -4,7 +4,7 @@ use blib;
 use lib 't/lib';
 use strict;
 use warnings;
-use Test::More tests => 96;
+use Test::More tests => 104;
 use Test::NoWarnings;
 use Test::XML::Canon;
 
@@ -128,6 +128,31 @@ for(
   [{name=>'abc',labels=>{345,'<b>X</b>'}},'abc/escape',
     '<select name="abc"><option value="345">&#60;b&#62;X&#60;/b&#62;</option></select>',
     '<select name="abc"><option value="345">&#60;b&#62;X&#60;/b&#62;</option></select>',
+  ],
+
+  [{name => 'abc', values => [['g1','o1','o2'],'o3',['g2','o4','o5']]},'groups',
+    '<select name="abc">'.
+      '<optgroup label="g1"><option value="o1"/><option value="o2"/></optgroup>'.
+      '<option value="o3"/>'.
+      '<optgroup label="g2"><option value="o4"/><option value="o5"/></optgroup>'.
+      '</select>',
+    '<select name="abc">'.
+      '<optgroup label="g1"><option value="o1"/><option value="o2"/></optgroup>'.
+      '<option value="o3"/>'.
+      '<optgroup label="g2"><option value="o4"/><option value="o5"/></optgroup>'.
+      '</select>',
+  ],
+  [{name => 'abc', values => [[{label => 'g1',disabled => 1},'o1','o2'],'o3',[{label => 'g2',random => 'quux'},'o4','o5']]},'groups',
+    '<select name="abc">'.
+      '<optgroup label="g1" disabled="disabled"><option value="o1"/><option value="o2"/></optgroup>'.
+      '<option value="o3"/>'.
+      '<optgroup label="g2" random="quux"><option value="o4"/><option value="o5"/></optgroup>'.
+      '</select>',
+    '<select name="abc">'.
+      '<optgroup label="g1" disabled="disabled"><option value="o1"/><option value="o2"/></optgroup>'.
+      '<option value="o3"/>'.
+      '<optgroup label="g2" random="quux"><option value="o4"/><option value="o5"/></optgroup>'.
+      '</select>',
   ],
 ){
   my($args,$name,$expect_empty,$expect_full)=@$_;

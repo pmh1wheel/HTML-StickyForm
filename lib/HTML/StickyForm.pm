@@ -621,9 +621,13 @@ sub radio_group{
 Generates a C<E<lt>selectE<gt>> element. All arguments are used directly to
 generate attributes in the C<E<lt>selectE<gt>> element, except for those listed below. Unless otherwise stated, all names and values are HTML-escaped.
 
-C<values>: An arrayref of values.
-One C<E<lt>optionE<gt>> element will be created inside the C<E<lt>selectE<gt>>
-element for each entry, in the supplied order.  Defaults to label keys.
+C<values>: An arrayref of values and/or option groups.
+Scalar values are used directly to create C<E<lt>optionE<gt>> elements,
+whereas arrayrefs represent option groups. The first element in an option
+group is either the group's label or a hashref holding all of the group's
+attributes, of which C<disabled> is special cased to produce the attribute
+value C<disabled> if true, and no attribute if false.
+Defaults to label keys.
 
 C<labels>: A hashref of labels.
 Each C<E<lt>optionE<gt>> tag generated will contain the
@@ -634,7 +638,7 @@ C<selected>: Unconditional status. If present, the supplied values will be
 used to decide which options to mark as selected, and C<default> and any
 sticky values will be ignored. May be a single value or arrayref.
 
-C<default>: Consitional status, ignored if C<selected> is
+C<default>: Conditional status, ignored if C<selected> is
 supplied. If the form is sticky, the sticky values will be used to decide which
 options are selected. Otherwise, the supplied values will be used.
 May be a single value or arrayref.
@@ -678,25 +682,13 @@ sub select{
   $field.=' multiple="multiple"' if $multiple;
   $field.=">";
 
-  for my $value(@$values){
-    _escape(my $evalue=$value);
-    $field.=qq(<option value="$evalue");
-    $field.=' selected="selected"' if $selected{$value};
-    $field.=">";
-    if(exists $labels->{$value}){
-      my $label=$labels->{$value};
-      _escape($label);
-      $field.=$label;
-    }elsif($v_as_l){
-      $field.=$evalue;
-    }
-    $field.="</option>";
-  }
-
+  $field.=_select_options($values,\%selected,$labels,$v_as_l);
   $field.="</select>";
 
   $field;
 }
+
+
 
 =item submit(PAIRLIST)
 
@@ -765,6 +757,53 @@ sub _args{
   ($self,$args);
 }
 
+=item _select_options(\@values,\%selected,\%labels,$values_as_labels)
+
+Returns an HTML fragment containing C<option> elements for the supplied
+list of option values. Values which are arrayrefs are used to represent
+option groups, wherein the zeroth element is either the group name, or
+a hashref holding the group's attributes.
+
+=cut
+
+sub _select_options{
+  my($values,$selected,$labels,$v_as_l)=@_;
+  my $field='';
+  for my $value(@$values){
+    if(ref $value){
+      # Handle option group
+      my($_group,@subvalues)=@$value;
+      my %group=ref($_group) ? %$_group : (label => $_group);
+      if(delete $group{disabled}){
+        $group{disabled}='disabled';
+      }
+      $field.=qq(<optgroup);
+      while(my($name,$value)=each %group){
+        _escape($value);
+	$field.=qq( $name="$value");
+      }
+      $field.='>';
+      $field.=_select_options(\@subvalues,$selected,$labels);
+      $field.='</optgroup>';
+    }else{
+      # Handle single option
+      _escape(my $evalue=$value);
+      $field.=qq(<option value="$evalue");
+      $field.=' selected="selected"' if $selected->{$value};
+      $field.=">";
+      if(exists $labels->{$value}){
+	my $label=$labels->{$value};
+	_escape($label);
+	$field.=$label;
+      }elsif($v_as_l){
+	$field.=$evalue;
+      }
+      $field.="</option>";
+    }
+  }
+
+  $field;
+}
 
 =back
 
