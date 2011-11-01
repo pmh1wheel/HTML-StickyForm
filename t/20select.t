@@ -4,7 +4,7 @@ use blib;
 use lib 't/lib';
 use strict;
 use warnings;
-use Test::More tests => 104;
+use Test::More tests => 108;
 use Test::NoWarnings;
 use Test::XML::Canon;
 
@@ -152,6 +152,18 @@ for(
       '<optgroup label="g1" disabled="disabled"><option value="o1"/><option value="o2"/></optgroup>'.
       '<option value="o3"/>'.
       '<optgroup label="g2" random="quux"><option value="o4"/><option value="o5"/></optgroup>'.
+      '</select>',
+  ],
+  [{name => 'abc', values => ['a','b','c'],-foo => {a => 'aa',c => 'ccc'}},'per-value',
+    '<select name="abc">'.
+      '<option value="a" foo="aa"/>'.
+      '<option value="b"/>'.
+      '<option value="c" foo="ccc"/>'.
+      '</select>',
+    '<select name="abc">'.
+      '<option value="a" foo="aa"/>'.
+      '<option value="b"/>'.
+      '<option value="c" foo="ccc"/>'.
       '</select>',
   ],
 ){

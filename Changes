@@ -1,3 +1,6 @@
+2011-11-01 0.08 More select() improvements:
+  Add attributes for <option>s, including per-value values
+
 2011-10-18 0.07_02 Preview release of improvements to select():
   Add option group capability
 
