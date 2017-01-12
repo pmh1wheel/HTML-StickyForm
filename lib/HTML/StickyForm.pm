@@ -345,7 +345,7 @@ sub text{
     delete $args->{default};
   }else{
     $value=delete $args->{default};
-    $value=$self->{req}->param($name) if $self->{params};
+    $value=$self->{req}->param($name) if $self->_has_sticky_value($name);
   }
 
   _escape($type);
@@ -412,7 +412,7 @@ sub textarea{
     delete $args->{default};
   }else{
     $value=delete $args->{default};
-    $value=$self->{req}->param($name) if $self->{params};
+    $value=$self->{req}->param($name) if $self->_has_sticky_value($name);
   }
 
   _escape($name);
@@ -461,7 +461,7 @@ sub checkbox{
   }else{
     $checked=delete $args->{default};
     $value='' unless defined($value);
-    $checked=grep $_ eq $value,$self->{req}->param($name) if $self->{params};
+    $checked=grep $_ eq $value,$self->{req}->param($name) if $self->_has_sticky_value($name);
   }
 
   _escape($name);
@@ -537,7 +537,7 @@ sub checkbox_group{
       $checked=delete $args->{default};
       $checked=[$checked] if ref($checked) ne 'ARRAY';
     }
-    $checked=[$self->{req}->param($name)] if $self->{params};
+    $checked=[$self->{req}->param($name)] if $self->_has_sticky_value($name);
   }
   my %checked=map +($_,'checked'),@$checked;
   my $br=delete $args->{linebreak} ? "<br$self->{well_formed}>" : '';
@@ -665,7 +665,7 @@ sub select{
     delete $args->{default};
   }else{
     $selected=delete $args->{default};
-    $selected=[$self->{req}->param($name)] if $self->{params};
+    $selected=[$self->{req}->param($name)] if $self->_has_sticky_value($name);
   }
   if(!defined $selected){ $selected=[]; }
   elsif(ref($selected) ne 'ARRAY'){ $selected=[$selected]; }
@@ -765,6 +765,17 @@ sub _args{
   my $self=shift;
   my $args=ref($_[0]) ? {%{$_[0]}} : {@_};
   ($self,$args);
+}
+
+=item _has_sticky_value($name)
+
+Return true if there is a provided sticky value.
+
+=cut
+
+sub _has_sticky_value($) {
+  my $self=shift;
+  ($self->{params} && defined($self->{req}->param($_[0])));
 }
 
 =item _select_options(\@values,\%option_args,\%labels,$values_as_labels)
