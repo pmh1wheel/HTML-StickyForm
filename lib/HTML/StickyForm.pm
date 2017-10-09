@@ -5,11 +5,10 @@ HTML::StickyForm - Lightweight general-purpose HTML form generation, with sticky
 
 =head1 SYNOPSIS
 
- # mod_perl example
-
  use HTML::StickyForm;
  use Apache::Request;
 
+foo
  sub handler{
    my($r)=@_;
    $r=Apache::Request->new($r);
